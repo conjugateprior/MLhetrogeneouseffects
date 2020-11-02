@@ -1,2 +1,2 @@
-# MLhetrogeneouseffects
+# MLheterogeneouseffects
 Master thesis project
