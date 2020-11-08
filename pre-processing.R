@@ -20,7 +20,13 @@ Uganda_Data <- Uganda_Data %>% transform(
                      age_Imarry = M_marrywhen + age, 
                      Rage_Imarry = RM_marrywhen)
 
-#replace with na values
+#replace with na values: this doesn't work yet!!!
+Uganda_Data <- Uganda_Data %>% select(
+  age_Imarry, Rage_Imarry) %>%
+  mutate(age_Imarry = na_if(age_Imarry, gt(50)),
+         Rage_Imarry = na_if(Rage_Imarry, gt(50)))
+                     
+?na_if
 
 names(Uganda_Data)
-Uganda_Data$M
+Uganda_Data$age_Imarry
