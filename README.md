@@ -1,5 +1,5 @@
 # MLheterogeneouseffects
 Master thesis project
 Methodology steps:
-1. Run in stata "creation1" do file to generate necessary variables. 
+1. Run the file  "1.creation.do" on the data file "Uganda_ELA_Panel_wide" using STATA to generate necessary variables. 
 2. 
