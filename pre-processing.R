@@ -4,29 +4,46 @@ library(caret)
 library(tidyverse)
 library(dplyr)
 
-Uganda_Data <- read_dta("~/Desktop/Master thesis/MLhetrogeneouseffects/data/Uganda ELA Panel wide.dta")
-View(Uganda_Data)
+ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
+View(ud)
 
-#* generating variables
-#gen age_Imarry=M_marrywhen+age
-#replace age_Imarry=. if age_Imarry<16 | age_Imarry>50
-#gen Rage_Imarry=RM_marrywhen
-#replace Rage_Imarry=. if Rage_Imarry<16 | Rage_Imarry>50
-#gen M_marrywhox=M_marrywho
-#gen RM_marrywhox=RM_marrywho
 
-#generate variables
-Uganda_Data <- Uganda_Data %>% transform(
-                     age_Imarry = M_marrywhen + age, 
-                     Rage_Imarry = RM_marrywhen)
+#subset 
+ud_subset <- ud %>% 
+  subset(select = c("HHAssetvalue_total", "HHF_loanbrac", "HHM_whoshouldearn","M_ablework_if",
+                    "M_children", "M_marrywhen", "M_marrywho", "M_wanttowork_if", "QC_clubheard", 
+                    "QC_clubparticipateIMP", "QC_stillgoing", "QE_Denrolled", "Qage", "Qback_school",
+                    "Qhsworked_year_empl","Qhsworked_year_self", "Qincind_empl", "Qincind_selfempl",
+                    "Qincome_year_ind", "QlifeskillMOREfew", "QlifeskillMOREfewIMP","QlivelihoodMOREfew",
+                    "QlivelihoodMOREfewIMP", "Qoften1WEEK", "Qoften3WEEK", "Qstudy_hours", "Qworry_job", 
+                    "RC_clubheard","RC_clubparticipateIMP","RC_stillgoing","RE_Denrolled", "Rage", "Rback_school",
+                    "Rhsworked_year_self", "Rhsworked_year_empl", "Rincind_empl", "Rincind_selfempl", "Rstudy_hours",
+                    "Rworry_job", "age", "back_school","baseline", "branch_name", "branchno", "dist_nearclub","endline", 
+                    "follow_up", "hsworked_year_empl", "hsworked_year_self", "id", "idno","incind_empl", "incind_selfempl",
+                    "income_year_ind", "lifeskillMOREfew", "lifeskillMOREfewIMP","livelihoodMOREfew","livelihoodMOREfewIMP",
+                    "often1WEEK","often3WEEK", "panel", "pid", "satisfaction_income", "selfempl","study_hours",
+                    "treatment", "villid", "worry_job", "age_Imarry", "Rage_Imarry", "M_marrywhox","RM_marrywhox",          
+                    "rural", "rich","below16","z_QEntrep_total", "z_Qany_iga", "z_Qselfempl", "z_Qempl","z_QExpenditure_totDF",
+                    "QM_chi","Qpart","QR_sexu","Qsex_p","QRhiv_s","Qalways_c", "Qother_c", "z_QM_chi","z_Qpart","z_QR_sexu",             
+                    "z_Qsex_p", "z_QRhiv_s", "z_Qalways_c", "z_Qother_c","QM_i_ageF", "QM_i_ageM", "QM_baby_no", "QM_baby_ageF","QM_daught",             
+                    "QM_son", "z_Qempowerment", "z_QM_i_ageF","z_QM_i_ageM","z_QM_baby_no","z_QM_baby_ageF",       
+                    "z_QM_daught", "z_QM_son","Qcontrol_body","Qaspiration","Qiga","z_REntrep_total","z_Rany_iga","z_Rselfempl","z_Rempl",               
+                    "z_RExpenditure_totDF", "RM_chi", "Rpart", "RR_sexu", "Rsex_p","RRhiv_s", "Ralways_c","Rother_c","z_RM_chi",              
+                    "z_Rpart", "z_RR_sexu", "z_Rsex_p", "z_RRhiv_s", "z_Ralways_c","z_Rother_c","RM_i_ageF","RM_i_ageM", "RM_baby_ageF",
+                    "RM_daught","RM_son","z_Rempowerment","z_RM_i_ageF","z_RM_i_ageM","z_RM_baby_no","z_RM_baby_ageF","z_RM_daught","z_RM_son",
+                    "Rcontrol_body","Raspiration","Riga", "z_Entrep_total","z_any_iga", "z_selfempl","z_empl","z_Expenditure_totDF",
+                    "zALL_Entrep_total","zALL_any_iga","zALL_selfempl","zALL_empl", "zALL_Expenditure_totDF", "M_chi","part","Rhiv_s",                 
+                    "always_c","other_c","z_M_chi", "z_part","z_R_sexu","z_sex_p","z_Rhiv_s","z_always_c","z_other_c","zALL_R_sexu",
+                    "zALL_sex_p", "zALL_Rhiv_s","zALL_always_c","zALL_other_c","M_i_ageF","M_i_ageM","M_baby_no","M_baby_ageF","M_daught",
+                    "M_son","z_empowerment","z_M_i_ageF","z_M_i_ageM","z_M_baby_no","z_M_baby_ageF","z_M_daught","z_M_son","zALL_empowerment",
+                    "zALL_M_i_ageF","zALL_M_i_ageM", "zALL_M_baby_no","zALL_M_baby_ageF","zALL_M_daught","zALL_M_son","control_body","aspiration",
+                    "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4","_Bbranch_na_5", "_Bbranch_na_6",
+                    "_Bbranch_na_7", "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10" ))
 
-#replace with na values: this doesn't work yet!!!
-Uganda_Data <- Uganda_Data %>% select(
-  age_Imarry, Rage_Imarry) %>%
-  mutate(age_Imarry = na_if(age_Imarry, gt(50)),
-         Rage_Imarry = na_if(Rage_Imarry, gt(50)))
-                     
-?na_if
 
-names(Uganda_Data)
-Uganda_Data$age_Imarry
+
+
+
+
+
+#subset: loss all QEntrep , Q
