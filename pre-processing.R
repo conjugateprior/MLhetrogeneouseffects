@@ -53,6 +53,20 @@ count(ud_subset, is.na(Qhsworked_year_empl))
 count(ud_subset, is.na(control_body))
 
 
+# Subset missing values
+ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
+
+# Function for summarystats
+custom_glimpse <- function(df_summary) {
+  data.frame(
+    col_name = colnames(df_summary),
+    col_index = 1:ncol(df_summary),
+    col_class = sapply(df_summary, class),
+    col_mean = sapply(df_summary, mean),
+    col_obs = sapply(df_summary, count),
+    row.names = NULL
+  )
+}
 
 
 
