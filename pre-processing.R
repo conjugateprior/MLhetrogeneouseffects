@@ -1,14 +1,18 @@
-#load data
+
+#load packages
 library(haven)
 library(caret)
 library(tidyverse)
 library(dplyr)
+library(expss)
 
+#load data
 ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
-View(ud)
 
+var_lab(ud$RC_stillgoing)
+val_lab(ud$RC_stillgoing)
 
-#subset 
+#subset=keep relevant variables 
 ud_subset <- ud %>% 
   subset(select = c("HHAssetvalue_total", "HHF_loanbrac", "HHM_whoshouldearn","M_ablework_if",
                     "M_children", "M_marrywhen", "M_marrywho", "M_wanttowork_if", "QC_clubheard", 
@@ -38,12 +42,18 @@ ud_subset <- ud %>%
                     "M_son","z_empowerment","z_M_i_ageF","z_M_i_ageM","z_M_baby_no","z_M_baby_ageF","z_M_daught","z_M_son","zALL_empowerment",
                     "zALL_M_i_ageF","zALL_M_i_ageM", "zALL_M_baby_no","zALL_M_baby_ageF","zALL_M_daught","zALL_M_son","control_body","aspiration",
                     "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4","_Bbranch_na_5", "_Bbranch_na_6",
-                    "_Bbranch_na_7", "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10" ))
+                    "_Bbranch_na_7", "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10")) 
+
+#missing values in baseline variables
+names(ud_subset)
+count(ud_subset, is.na(age))
+count(ud_subset, is.na(z_Entrep_total))
+count(ud_subset, is.na(z_empowerment))
+count(ud_subset, is.na(Qhsworked_year_empl))
+count(ud_subset, is.na(control_body))
 
 
 
 
 
 
-
-#subset: loss all QEntrep , Q
