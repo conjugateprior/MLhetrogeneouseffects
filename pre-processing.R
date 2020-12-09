@@ -1,3 +1,6 @@
+##################
+# PRE-PROCESSING #
+##################
 
 #load packages
 library(haven)
@@ -6,11 +9,15 @@ library(tidyverse)
 library(dplyr)
 library(expss)
 
-#load data
+#############
+# LOAD DATA #
+#############
+
 ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 
-var_lab(ud$RC_stillgoing)
-val_lab(ud$RC_stillgoing)
+##############
+# SUBSETTING #
+##############
 
 #subset=keep relevant variables 
 ud_subset <- ud %>% 
@@ -44,29 +51,35 @@ ud_subset <- ud %>%
                     "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4","_Bbranch_na_5", "_Bbranch_na_6",
                     "_Bbranch_na_7", "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10")) 
 
-#missing values in baseline variables
-names(ud_subset)
-count(ud_subset, is.na(age))
-count(ud_subset, is.na(z_Entrep_total))
-count(ud_subset, is.na(z_empowerment))
-count(ud_subset, is.na(Qhsworked_year_empl))
-count(ud_subset, is.na(control_body))
 
+###############
+# DESCRIPTIVE #
+###############
 
-# Subset missing values
-ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
+# Step 1: understand how many na in each row (observarion) 
+obs_na <- apply(ud, MARGIN = 1, function(x) sum(is.na(x)))
+obs_na
 
+# Step 2: understand how many na in each column (variable) + descriptive
 # Function for summarystats
-custom_glimpse <- function(df_summary) {
+custom_glimpse <- function(df_summary, descend = TRUE) 
+  {
   data.frame(
     col_name = colnames(df_summary),
     col_index = 1:ncol(df_summary),
-    col_class = sapply(df_summary, class),
+    col_class = sapply(df_summary, class= c(double, numeric)),
     col_mean = sapply(df_summary, mean),
     col_obs = sapply(df_summary, count),
-    row.names = NULL
+    row.names = NULL,
+  return(df_summary)
   )
 }
+data.fram
+
+
+# Generates Data set with no NA
+ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
+
 
 
 
