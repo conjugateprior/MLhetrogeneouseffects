@@ -61,6 +61,8 @@ ud_subset <- ud %>%
 # Step 1: understand how many na in each row (observarion) 
 obs_na <- apply(ud, MARGIN = 1, function(x) sum(is.na(x)))
 obs_na <- data.frame(obs_na)
+obs_na_alot <- obs_na %>%
+  filter(obs_na>99)
 
 # Step 2: understand how many na in each column (variable) 
 var_na <- md.pattern(ud)
