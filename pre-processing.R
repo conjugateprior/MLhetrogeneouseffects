@@ -6,8 +6,9 @@
 library(haven)
 library(caret)
 library(tidyverse)
-library(dplyr)
 library(expss)
+library(summarytools)
+library(mice)
 
 #############
 # LOAD DATA #
@@ -19,7 +20,8 @@ ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 # SUBSETTING #
 ##############
 
-#subset=keep relevant variables 
+# Subset 
+##removes variables that were transformed to z scores
 ud_subset <- ud %>% 
   subset(select = c("HHAssetvalue_total", "HHF_loanbrac", "HHM_whoshouldearn","M_ablework_if",
                     "M_children", "M_marrywhen", "M_marrywho", "M_wanttowork_if", "QC_clubheard", 
@@ -58,12 +60,37 @@ ud_subset <- ud %>%
 
 # Step 1: understand how many na in each row (observarion) 
 obs_na <- apply(ud, MARGIN = 1, function(x) sum(is.na(x)))
-obs_na
+obs_na <- data.frame(obs_na)
 
-# Step 2: understand how many na in each column (variable) + descriptive
-# Function for summarystats
-custom_glimpse <- function(df_summary, descend = TRUE) 
-  {
+# Step 2: understand how many na in each column (variable) 
+var_na <- md.pattern(ud)
+
+# Step 3: descriptive stats
+descriptive <- dfSummary(ud)
+view(descriptive)
+
+
+
+
+
+
+
+
+
+
+
+library(VIM)
+mice_plot <- aggr(ud, col=c('navyblue','purple'),
+                    numbers=TRUE, sortVars=TRUE,
+                    labels=names(ud), cex.axis=.7,
+                    gap=3, ylab=c("Missing data","Pattern"))
+
+mice_plot$missing
+
+
+
+# Customised Function for summarystats: currently not working
+custom_glimpse <- function(df_summary) {
   data.frame(
     col_name = colnames(df_summary),
     col_index = 1:ncol(df_summary),
@@ -71,16 +98,13 @@ custom_glimpse <- function(df_summary, descend = TRUE)
     col_mean = sapply(df_summary, mean),
     col_obs = sapply(df_summary, count),
     row.names = NULL,
-  return(df_summary)
+    return(df_summary)
   )
 }
-data.fram
 
 
 # Generates Data set with no NA
 ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
-
-
 
 
 
