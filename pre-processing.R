@@ -19,6 +19,16 @@ ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 ##############
 # SUBSETTING #
 ##############
+#rename variables to dummy
+names(ud)
+ud <- ud %>%
+  rename(d_any_iga=any_iga, d_back_school=back_school, d_empl=empl, d_endline=endline, 
+         d_follow_up=follow_up,d_baseline=baseline, d_partner=partner, 
+         d_selfempl=selfempl, d_sex_pregnancy=sex_pregnancy, d_treatment=treatment,
+         d_worry_job=worry_job, d_rural=rural, d_below16=below16, d_rpart=Rpart,
+         d_QM_chi=QM_chi, d_QM_son=QM_son, d_RM_chi=RM_chi, d_RR_sexu=RR_sexu, 
+         d_rsex_p=Rsex_p, d_M_chi=M_chi, d_part=part, d_r_sexu=R_sexu)
+
 
 # Subset 
 ##removes variables that were transformed to z scores
