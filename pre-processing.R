@@ -16,13 +16,14 @@ library(mice)
 
 ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 
+
 ##################
 # PRE PROCESSING #
 ##################
 
 ##removes variables that are were used to create indexes 
 ##keeping all indexes 
-ud_scales <- ud %>% 
+ud_subset <- ud %>% 
   subset(select = c("HHAssetvalue_total", "HHF_loanbrac", "HHM_whoshouldearn","M_ablework_if",
                     "M_children", "M_marrywhen", "M_marrywho", "M_wanttowork_if", "QC_clubheard", 
                     "QC_clubparticipateIMP", "QC_stillgoing", "QE_Denrolled", "Qage", "Qback_school",
@@ -52,7 +53,7 @@ ud_scales <- ud %>%
                     "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4", "_Bbranch_na_5", "_Bbranch_na_6","_Bbranch_na_7", 
                     "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10")) 
 
-
+ud_subset[is.na(ud_subset)] = 88
 #Function to standardize variables
 standardize <- function(data) {
   mean_data <- mean(data)
@@ -62,16 +63,16 @@ standardize <- function(data) {
 }
 
 #Standardize variables
-ud_scales$z_hsworked_year_empl <- standardize(ud_scales$hsworked_year_empl)
-ud_scales$z_Qhsworked_year_empl <- standardize(ud_scales$Qhsworked_year_empl)
-ud_scales$z_Rhsworked_year_empl <- standardize(ud_scales$Rhsworked_year_empl)
-#ud_scales$z_satisfaction_income <- standardize(ud_scales$satisfaction_income) #NULL
-#ud_scales$z_study_hours <- standardize(ud_scales$study_hours) #NULL
-#ud_scales$z_Qstudy_hours <- standardize(ud_scales$Qstudy_hours) #NULL
-#ud_scales$z_Rstudy_hours <- standardize(ud_scales$Rstudy_hours) #NULL
-#ud_scales$z_age_Imarry <- standardize(ud_scales$age_Imarry) #NULL
-#ud_scales$z_Rage_Imarry <- standardize(ud_scales$Rage_Imarry) #NULL
-#ud_scales$z_M_marrywho <- standardize(ud_scales$M_marrywho) #NULL
+ud_subset$z_hsworked_year_empl <- standardize(ud_subset$hsworked_year_empl)
+ud_subset$z_Qhsworked_year_empl <- standardize(ud_subset$Qhsworked_year_empl)
+ud_subset$z_Rhsworked_year_empl <- standardize(ud_subset$Rhsworked_year_empl)
+ud_subset$z_satisfaction_income <- standardize(ud_subset$satisfaction_income) 
+ud_subset$z_study_hours <- standardize(ud_subset$study_hours) 
+ud_subset$z_Qstudy_hours <- standardize(ud_subset$Qstudy_hours) 
+ud_subset$z_Rstudy_hours <- standardize(ud_subset$Rstudy_hours) 
+ud_subset$z_age_Imarry <- standardize(ud_subset$age_Imarry) 
+ud_subset$z_Rage_Imarry <- standardize(ud_subset$Rage_Imarry) 
+ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho) 
 
 
 
