@@ -1,0 +1,106 @@
+---
+title: "Random Forest_v1"
+author: "Mariana Saldarriaga"
+date: "12/30/2020"
+output: html_document
+---
+
+# Install packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Generalized Randon Forest (cf. Athey and Wager)
+install.packages("grf") 
+```
+
+```{r}
+summary(ud_subset)
+dim(ud_subset)
+```
+
+
+# Spliting the dataset into train and test set. Why? to not have overfiting problems. 
+```{r}
+## Datacamp method (ratio 75:25); most of causal forest use this ratio but haven't found true argument to chose this ratio. 
+# Get number of rows
+N <- nrow(ud_subset)
+# Calculate how many rows 75% of N should be and print it; we use round to get an integer
+target <- round(N * 0.75)
+# Create the vector of N uniform random variables: rv
+rv <- runif(N)
+# Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
+ud_train <- ud_subset[rv < 0.75, ]
+ud_test <- ud_subset[rv >= 0.75, ]
+# Use nrow() to examine ud_train and ud_test
+nrow(ud_train)
+nrow(ud_test)
+
+## I think it is large enough the data set --> we don't need cross validation to split the data!
+
+# Other method (ratio 70:30)
+set.seed(400) # To always run same answer; or just put seed
+train <- sample(nrow(ud_subset), 0.7*nrow(ud_subset), replace = FALSE)
+train_set <- ud_subset[train,]
+valid_set <- ud_subset[-train,]
+summary(train_set)
+summary(valid_set)
+
+```
+
+### NOTES: USE CAUSAL TREE FROM GRF PACKAGE (TUNE PARAMETERS ALL)
+
+# Train a Causal Forests
+```{r}
+library(grf)
+
+# Random seed to reproduce results
+
+# Create outcome and inputs for the Causal Forests
+outcome_Y <-
+vars_X <- c()
+Treatment_W <- 
+causalforest_train <-causal_forest(vars_X, outcome_Y, treatment_W)
+
+
+```
+
+## For linear regression
+
+# Train the model using test/train split
+```{r}
+# Datacamp method
+summary(ud_train)
+
+# Formula to express cty as a function of hwy: fmla and print it.
+(fmla <- cty~hwy)
+
+# Now use lm() to build a model mpg_model from mpg_train that predicts cty from hwy 
+mpg_model <- lm(fmla, mpg_train)
+
+# Use summary() to examine the model
+summary(mpg_model)
+```
+
+# Evaluate model using test/train split
+```{r}
+# predict cty from hwy for the training set
+mpg_train$pred <- predict(mpg_model)
+
+# predict cty from hwy for the test set
+mpg_test$pred <- predict(mpg_model, newdata = mpg_test)
+
+# Evaluate the rmse on both training and test data and print them
+(rmse_train <- rmse(mpg_train$pred, mpg_train$cty))
+(rmse_test <- rmse(mpg_test$pred, mpg_test$cty))
+
+
+# Evaluate the r-squared on both training and test data.and print them
+(rsq_train <- r_squared(mpg_train$pred, mpg_train$cty))
+(rsq_test <- r_squared(mpg_test$pred, mpg_test$cty))
+
+# Plot the predictions (on the x-axis) against the outcome (cty) on the test data
+ggplot(mpg_test, aes(x = pred, y = cty)) + 
+  geom_point() + 
+  geom_abline()
+```
+

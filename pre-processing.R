@@ -56,6 +56,10 @@ ud_subset <- ud %>%
 # Replace NA
 ud_subset[is.na(ud_subset)] = 88
 
+# Works NA BUT standardization some variables fail
+ud_subset[ud_subset == 88] <- NA
+
+
 #Function to standardize variables
 standardize <- function(data) {
   mean_data <- mean(data)
