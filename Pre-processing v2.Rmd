@@ -93,7 +93,7 @@ ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho)
 
 data_uganda <- ud_subset %>%
   rename(treatment = treatment, 
-         rich = high_income,
+         rich = rich,
          below16 = below16,
          rural = rural,
          back_school = back_school,
