@@ -1,0 +1,164 @@
+---
+title: "Pre-processing v2"
+author: "Mariana Saldarriaga"
+date: "1/10/2021"
+output: html_document
+---
+
+# Packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(haven)
+library(caret)
+library(tidyverse) # remember includes dplyr
+library(expss)
+library(summarytools)
+library(mice)
+
+```
+
+```{r}
+# Load data
+ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
+```
+
+# Creat subset
+```{r pressure, echo=FALSE}
+# Remove variables that are were used to create indexes/keep all indexes 
+
+
+
+```
+
+# Deal with missing values
+```{r}
+# Replace NA
+ud_subset[is.na(ud_subset)] = 88
+
+# Works NA BUT standardization some variables fail
+ud_subset[ud_subset == 88] <- NA
+
+# Generates Data set with no NA -- ASK OFER
+ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
+```
+
+# Standardization variables
+```{r}
+# Function to standardize variables
+standardize <- function(data) {
+  mean_data <- mean(data)
+  sd_data <- sd(data)
+  stand_data <- (data - mean_data)/sd_data
+  return(stand_data)
+}
+
+# Standardize variables
+ud_subset$z_hsworked_year_empl <- standardize(ud_subset$hsworked_year_empl)
+ud_subset$z_Qhsworked_year_empl <- standardize(ud_subset$Qhsworked_year_empl)
+ud_subset$z_Rhsworked_year_empl <- standardize(ud_subset$Rhsworked_year_empl)
+ud_subset$z_satisfaction_income <- standardize(ud_subset$satisfaction_income) 
+ud_subset$z_study_hours <- standardize(ud_subset$study_hours) 
+ud_subset$z_Qstudy_hours <- standardize(ud_subset$Qstudy_hours) 
+ud_subset$z_Rstudy_hours <- standardize(ud_subset$Rstudy_hours) 
+ud_subset$z_age_Imarry <- standardize(ud_subset$age_Imarry) 
+ud_subset$z_Rage_Imarry <- standardize(ud_subset$Rage_Imarry) 
+ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho) 
+
+```
+
+# Change variables names (model)
+```{r}
+# qm endline
+# r follow up indexes
+
+# Missing variable attitude - baseline - desire be respected in village
+
+# not included but in ud_subset:
+# "branch_name", "branchno", "endline", "follow_up", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4", "_Bbranch_na_5", "_Bbranch_na_6","_Bbranch_na_7",  "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10",
+"HHAssetvalue_total",  "z_Entrep_total", "z_Expenditure_totDF", "M_marrywhen", "z_any_iga" -> does any income activity, 
+"selfempl", "z_selfempl","z_empl",   "hsworked_year_empl", "hsworked_year_self",
+"incind_empl", "incind_selfempl",
+"lifeskillMOREfew" "livelihoodMOREfew" -- not imputed, 
+"always_c","other_c",
+"igaALL"
+"iga"
+"z_any_iga"
+"zALL_any_iga"
+"zALL_Entrep_total","zALL_selfempl","zALL_empl", "zALL_Expenditure_totDF",
+
+# "villid", "baseline",  "id", "idno",
+
+# "age", "age_Imarry"--> not in codebook, not sure what is it sutable age for marry other variable
+
+data_uganda <- ud_subset %>%
+  rename(treatment = treatment, 
+         rich = high_income,
+         below16 = below16,
+         rural = rural,
+         back_school = back_school,
+         dist_nearclub = dist_nearclub,
+         HHF_loanbrac = loan_brac, 
+         HHM_whoshouldearn = att_earn_moneyfam,
+         M_ablework_if = ablework_married,
+         M_marrywho = who_decidehusband, 
+         M_children =  children, # M_chi z_M_chi
+         M_wanttowork_if = work_married,
+         iga = index_income_gen_act,
+         igaALL = index_income_gen_act_nonpanel, # OFER
+         zALL_Entrep_total = 
+         zALL_any_iga = 
+         zALL_selfempl = 
+         zALL_empl = 
+         zALL_Expenditure_totDF
+         aspiration = index_aspiration,
+         control_body = index_controlbody,
+         back_school = back_school, 
+         income_year_ind = income, # already trimmed
+         lifeskillMOREfewIMP = life_skills, 
+         livelihoodMOREfewIMP = livelihood,
+         often1WEEK = club_sometimes, 
+         often3WEEK = club_frequently ,
+         satisfaction_income = satisf_income,
+         study_hours = study_hours, 
+         part = partner, # part, z_part
+         worry_job = worry_job, # we should inverse it 1 is not worry and this is bad, normally 1 is good
+         
+         
+                     , "z_sex_p", "z_always_c","z_other_c", "zALL_sex_p",
+    "zALL_always_c","zALL_other_c","z_empowerment","z_M_i_ageF","z_M_i_ageM","z_M_baby_no",
+                    "z_M_baby_ageF","z_M_daught","z_M_son","zALL_empowerment","zALL_M_i_ageF","zALL_M_i_ageM", 
+                    "zALL_M_baby_no","zALL_M_baby_ageF","zALL_M_daught", "zALL_M_son","control_body","aspiration", 
+    
+    
+    "QC_clubheard", 
+                    "QC_clubparticipateIMP", "QC_stillgoing", "QE_Denrolled", "Qage", "Qback_school",
+                    "Qhsworked_year_empl","Qhsworked_year_self", "Qincind_empl", "Qincind_selfempl",
+                    "Qincome_year_ind", "QlifeskillMOREfew", "QlifeskillMOREfewIMP","QlivelihoodMOREfew",
+                    "QlivelihoodMOREfewIMP", "Qoften1WEEK", "Qoften3WEEK", "Qstudy_hours", "Qworry_job", "z_QEntrep_total", "z_Qany_iga", "z_Qselfempl", "z_Qempl","z_QExpenditure_totDF", 
+                    "QM_chi","Qpart", "z_QM_chi","z_Qpart","z_QR_sexu","z_Qsex_p", "z_QRhiv_s", "z_Qalways_c", "z_Qother_c", "QM_baby_no",           
+                    "QM_son", "z_Qempowerment", "z_QM_i_ageF","z_QM_i_ageM","z_QM_baby_no","z_QM_baby_ageF",      
+                    "z_QM_daught", "z_QM_son","Qcontrol_body","Qaspiration","Qiga",
+
+    
+    
+                    "RC_clubheard","RC_clubparticipateIMP","RC_stillgoing","RE_Denrolled", "Rage", "Rback_school",
+                    "Rhsworked_year_self", "Rhsworked_year_empl", "Rincind_empl", "Rincind_selfempl", "Rstudy_hours",
+                    "Rworry_job",  "Rage_Imarry",          
+                   "z_REntrep_total","z_Rany_iga","z_Rselfempl","z_Rempl",               
+                    "z_RExpenditure_totDF", "RM_chi", "Rpart", "RR_sexu", "Ralways_c","Rother_c","z_RM_chi",                 "z_Rpart", "z_RR_sexu", "z_Rsex_p", "z_RRhiv_s", "z_Ralways_c","z_Rother_c",
+                    "z_Rempowerment","z_RM_i_ageF","z_RM_i_ageM","z_RM_baby_no","z_RM_baby_ageF","z_RM_daught","z_RM_son","Rcontrol_body","Raspiration","Riga", "z_R_sexu","z_Rhiv_s","zALL_R_sexu",
+                     "zALL_Rhiv_s"
+  )
+  
+```
+
+# Create new indexes
+```{r}
+# To create indexes
+# First, define goal and then based on the defined goal, try to find proper variables.
+# Weights? See theory!
+
+
+```
+
