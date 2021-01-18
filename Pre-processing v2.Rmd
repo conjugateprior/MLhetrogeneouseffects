@@ -109,7 +109,10 @@ ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho)
                     "QM_chi","Qpart", "z_QM_chi","z_Qpart","z_QR_sexu","z_Qsex_p", "z_QRhiv_s", "z_Qalways_c", "z_Qother_c", "QM_baby_no",           
                     "QM_son", "z_Qempowerment", "z_QM_i_ageF","z_QM_i_ageM","z_QM_baby_no","z_QM_baby_ageF",      
                     "z_QM_daught", "z_QM_son","Qcontrol_body","Qaspiration","Qiga",
+```
 
+
+```{r}
 # Rename variables to use in Causal Forests (not all variables in data base)
 data_uganda <- ud_subset %>% # only panel observations (not variables with ALL) # baseline and follow-up
   rename(treatment = treatment, ## baseline

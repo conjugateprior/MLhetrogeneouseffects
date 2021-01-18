@@ -1,0 +1,286 @@
+---
+title: "Random Forest_v1"
+author: "Mariana Saldarriaga and Ofer Dotan"
+date: "2021"
+output: html_document
+---
+
+# Install packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Generalized Randon Forest (cf. Athey and Wager)
+install.packages("grf") 
+```
+
+```{r}
+
+
+library(haven)
+library(caret)
+library(tidyverse) # remember includes dplyr
+library(expss)
+library(summarytools)
+library(mice)
+
+```
+
+```{r}
+# Load data
+ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
+```
+
+# Creat subset
+```{r pressure, echo=FALSE}
+# Remove variables that are were used to create indexes/keep all indexes 
+
+# add subset attitude!
+
+```
+
+# Deal with missing values
+```{r}
+# Replace NA
+ud_subset[is.na(ud_subset)] = 88
+
+# Works NA BUT standardization some variables fail
+ud_subset[ud_subset == 88] <- NA
+
+ud_subset_na <- na.omit(ud_subset) # Removes all NA in every row --> 0 rows
+
+# Generates Data set with no NA -- ASK OFER
+ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
+```
+
+# Standardization variables
+```{r}
+# Function to standardize variables
+standardize <- function(data) {
+  mean_data <- mean(data)
+  sd_data <- sd(data)
+  stand_data <- (data - mean_data)/sd_data
+  return(stand_data)
+}
+
+# Standardize variables
+ud_subset$z_hsworked_year_empl <- standardize(ud_subset$hsworked_year_empl)
+ud_subset$z_Qhsworked_year_empl <- standardize(ud_subset$Qhsworked_year_empl)
+ud_subset$z_Rhsworked_year_empl <- standardize(ud_subset$Rhsworked_year_empl)
+ud_subset$z_satisfaction_income <- standardize(ud_subset$satisfaction_income) 
+ud_subset$z_study_hours <- standardize(ud_subset$study_hours) 
+ud_subset$z_Qstudy_hours <- standardize(ud_subset$Qstudy_hours) 
+ud_subset$z_Rstudy_hours <- standardize(ud_subset$Rstudy_hours) 
+ud_subset$z_age_Imarry <- standardize(ud_subset$age_Imarry) 
+ud_subset$z_Rage_Imarry <- standardize(ud_subset$Rage_Imarry) 
+ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho)
+```
+
+
+```{r}
+# Rename variables to use in Causal Forests (not all variables in data base)
+data_uganda <- ud_subset %>% # only panel observations (not variables with ALL) # baseline and follow-up
+  rename(treatment = treatment, ## baseline
+         rich = rich, 
+         value_assets = HHAssetvalue_total, # not make assumption, model predict
+         below16 = below16, # transformation age
+         age = age, # keep original values; control in paper
+         branchno = branchno, # control in paper i.branch_name
+         rural = rural,
+         vill_id = villid, # cluster paper
+         want_respect = Attitude,
+         enroll_school = E_Denrolled,
+         back_school = back_school,
+         dist_nearclub = dist_nearclub,
+         loan_brac = HHF_loanbrac, 
+         att_earn_moneyfam = HHM_whoshouldearn,
+         ablework_married = M_ablework_if,
+         who_decidehusband = M_marrywho, 
+         work_married = M_wanttowork_if, 
+         index_income_gen_act = iga, # z_Entrep_total,z_any_iga,z_selfempl,z_empl,z_Expenditure_totDF
+         index_aspiration = aspiration, # z_M_i_ageF,z_M_i_ageM,z_M_baby_no,z_M_baby_ageF,z_M_daught,z_M_son
+         index_controlbody = control_body, # z_M_chi,z_part,z_R_sexu,z_sex_p,z_Rhiv_s,z_always_c,z_other_c
+         children = z_M_chi, # -M_children(reverse), standardize dummy --> M_chi # part control over body index
+         partner = z_part, # -partner, standardize dummy -->part # part control over body index
+         sex_unwilling = z_R_sexu, # -R_sexunwilling, standardize dummy --> R_sexu # part control over body index
+         index_empowerment = z_empowerment, # Not in aspiration index!!!!
+         back_school = back_school, 
+         income = income_year_ind, # already trimmed
+         life_skills = lifeskillMOREfewIMP, 
+         livelihood = livelihoodMOREfewIMP,
+         club_sometimes = often1WEEK, 
+         club_frequently = often3WEEK,
+         satisf_income = satisfaction_income,
+         study_hours = study_hours, 
+         worry_job = worry_job, # we should inverse it 1 is not worry and this is bad, normally 1 is good
+         branch_name = branch_name, # paper uses i.branch_name as control variable --> base _Bbranch_na_1 #
+         foll_club_heard = RC_clubheard, ## follow up
+         foll_club_part = RC_clubparticipateIMP, # imputed values
+         foll_still_goclub = RC_stillgoing,
+         foll_enroll_school = RE_Denrolled, 
+         foll_age = Rage,
+         foll_back_school = Rback_school,
+         foll_study_hours = Rstudy_hours,
+         foll_worry_job = Rworry_job,
+         foll_children = z_RM_chi, # standardize -RM_Children (dummy), # part control over body index
+         foll_partner = z_Rpart, # standardize -Rpartner (dummy) # part control over body index
+         foll_sex_unwilling = z_R_sexu, # standardize -RR_sexunwilling (dummy) # part control over body index
+         foll_index_income_gen_act = Riga, # z_REntrep_total,z_Rany_iga,z_Rselfempl,z_Rempl,z_RExpenditure_totDF
+         foll_index_controlbody = Rcontrol_body, # z_RM_chi,z_Rpart,z_RR_sexu,z_Rsex_p,z_RRhiv_s,z_Ralways_c z_Rother_c
+         foll_index_aspiration = Raspiration, # z_RM_i_ageF,z_RM_i_ageM,z_RM_baby_no,z_RM_baby_ageF,z_RM_daught,z_RM_son
+         foll_index_empowerment = z_Rempowerment # Not in aspiration index!!!!
+  )
+  
+```
+
+
+```{r}
+summary(ud_subset)
+dim(ud_subset)
+```
+
+
+# Spliting the dataset into train and test set. Why? to not have overfiting problems. 
+```{r}
+## Make sure the data has no missing values (outcome and treatment to run causal forests!!!)
+data_uganda_is.na <- data_uganda[!is.na(data_uganda$foll_index_income_gen_act), ]
+data_uganda_na <- as_tibble(data_uganda_is.na) 
+
+## Datacamp method (ratio 75:25); most of causal forest use this ratio but haven't found true argument to chose this ratio. 
+# Get number of rows
+N <- nrow(data_uganda_na)
+# Calculate how many rows 75% of N should be and print it; we use round to get an integer
+target <- round(N * 0.75)
+# Create the vector of N uniform random variables: rv
+rv <- runif(N)
+# Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
+data_uganda_train <- data_uganda_na[rv < 0.75, ]
+data_uganda_test <- data_uganda_na[rv >= 0.75, ]
+# Use nrow() to examine ud_train and ud_test
+nrow(data_uganda_train)
+nrow(data_uganda_test)
+
+## I think it is large enough the data set --> we don't need cross validation to split the data!
+
+# Other method (ratio 70:30)
+set.seed(400) # To always run same answer; or just put seed
+train <- sample(nrow(data_uganda_na), 0.7*nrow(data_uganda_na), replace = FALSE)
+data_uganda_train_v2 <- data_uganda_na[train,] #  Train is like the data we would collect in a randomized experiment 
+data_uganda_valid_v2 <- data_uganda_na[-train,] # Test would be the future cases which we are trying to predict
+summary(data_uganda_train_v2)
+nrow(data_uganda_train)
+summary(data_uganda_valid_v2)
+nrow(data_uganda_test)
+```
+
+### NOTES: USE CAUSAL TREE FROM GRF PACKAGE (TUNE PARAMETERS ALL)
+
+# Train a Causal Forests
+```{r}
+library(grf)
+
+# Random seed to reproduce results
+set.seed
+
+## INCOME GENERATING ACTIVITY - IGA
+# Create outcome and inputs for the Causal Forests (important all numeric; including dummy code the factor variables)
+Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
+#attach outcome to train data
+#data_uganda_train <- cbind(data_uganda_train, Y_outcome)
+X_vars <- model.matrix(lm (Y_outcome ~ children,
+                             #age,
+                             #rich + 
+                             #branchno + 
+                             #value_assets + 
+                             #rural+ 
+                             #want_respect + 
+                             #enroll_school + 
+                             #back_school + 
+                             #att_earn_moneyfam +
+                             #work_married+ 
+                           #ablework_married+
+                           #worry_job +
+                           #income +
+                           #back_school+
+                           #partner +
+                           #index_controlbody+
+                           #index_aspiration+
+                           #index_income_gen_act+
+                             #who_decidehusband + 
+                             #children + 
+                             #life_skills + 
+                             #study_hours + 
+                             #sex_unwilling + 
+                             #satisf_income +
+                             #livelihood, 
+                           data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
+
+C_vars <- as.matrix(data_uganda_train$vill_id, data_uganda_train$dist_nearclub, data_uganda_train$club_frequently, data_uganda_train$club_sometimes )
+str(C_vars)
+
+W_treatment <- as.matrix(data_uganda_train$treatment) # Treatment assignment
+
+causalforests_IGA_train <- causal_forest(X = X_vars,
+                                    Y = Y_outcome,
+                                    W = W_treatment, 
+                                    num.trees = 1500,
+                                    #clusters = C_vars, # paper clusters
+                                    orthog.boosting = TRUE) 
+                                    # but see again!!! Athey and Wager 2019; orthogonalization
+?causal_forest
+# We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
+
+## Predict the test data
+# Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
+preds_IGA <- predict(
+  object = causalforests_IGA_train, 
+  newdata = model.matrix(~ children, data = data_uganda_test), 
+  estimate.variance = TRUE
+)
+
+
+
+data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
+
+
+```
+
+## For linear regression
+
+# Train the model using test/train split
+```{r}
+# Datacamp method
+summary(ud_train)
+
+# Formula to express cty as a function of hwy: fmla and print it.
+(fmla <- cty~hwy)
+
+# Now use lm() to build a model mpg_model from mpg_train that predicts cty from hwy 
+mpg_model <- lm(fmla, mpg_train)
+
+# Use summary() to examine the model
+summary(mpg_model)
+```
+
+# Evaluate model using test/train split
+```{r}
+# predict cty from hwy for the training set
+mpg_train$pred <- predict(mpg_model)
+
+# predict cty from hwy for the test set
+mpg_test$pred <- predict(mpg_model, newdata = mpg_test)
+
+# Evaluate the rmse on both training and test data and print them
+(rmse_train <- rmse(mpg_train$pred, mpg_train$cty))
+(rmse_test <- rmse(mpg_test$pred, mpg_test$cty))
+
+
+# Evaluate the r-squared on both training and test data.and print them
+(rsq_train <- r_squared(mpg_train$pred, mpg_train$cty))
+(rsq_test <- r_squared(mpg_test$pred, mpg_test$cty))
+
+# Plot the predictions (on the x-axis) against the outcome (cty) on the test data
+ggplot(mpg_test, aes(x = pred, y = cty)) + 
+  geom_point() + 
+  geom_abline()
+```
+
