@@ -21,30 +21,35 @@ dim(ud_subset)
 
 # Spliting the dataset into train and test set. Why? to not have overfiting problems. 
 ```{r}
+## Make sure the data has no missing values (outcome and treatment to run causal forests!!!)
+data_uganda_is.na <- data_uganda[!is.na(data_uganda$foll_index_income_gen_act), ]
+data_uganda_na <- as_data_frame(data_uganda_is.na) 
+
 ## Datacamp method (ratio 75:25); most of causal forest use this ratio but haven't found true argument to chose this ratio. 
 # Get number of rows
-N <- nrow(ud_subset)
+N <- nrow(data_uganda_na)
 # Calculate how many rows 75% of N should be and print it; we use round to get an integer
 target <- round(N * 0.75)
 # Create the vector of N uniform random variables: rv
 rv <- runif(N)
 # Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
-ud_train <- ud_subset[rv < 0.75, ]
-ud_test <- ud_subset[rv >= 0.75, ]
+data_uganda_train <- data_uganda_na[rv < 0.75, ]
+data_uganda_test <- data_uganda_na[rv >= 0.75, ]
 # Use nrow() to examine ud_train and ud_test
-nrow(ud_train)
-nrow(ud_test)
+nrow(data_uganda_train)
+nrow(data_uganda_test)
 
 ## I think it is large enough the data set --> we don't need cross validation to split the data!
 
 # Other method (ratio 70:30)
 set.seed(400) # To always run same answer; or just put seed
-train <- sample(nrow(ud_subset), 0.7*nrow(ud_subset), replace = FALSE)
-train_set <- ud_subset[train,]
-valid_set <- ud_subset[-train,]
-summary(train_set)
-summary(valid_set)
-
+train <- sample(nrow(data_uganda_na), 0.7*nrow(data_uganda_na), replace = FALSE)
+data_uganda_train_v2 <- data_uganda_na[train,] #  Train is like the data we would collect in a randomized experiment 
+data_uganda_valid_v2 <- data_uganda_na[-train,] # Test would be the future cases which we are trying to predict
+summary(data_uganda_train_v2)
+nrow(data_uganda_train)
+summary(data_uganda_valid_v2)
+nrow(data_uganda_test)
 ```
 
 ### NOTES: USE CAUSAL TREE FROM GRF PACKAGE (TUNE PARAMETERS ALL)
@@ -54,12 +59,29 @@ summary(valid_set)
 library(grf)
 
 # Random seed to reproduce results
+set.seed
 
-# Create outcome and inputs for the Causal Forests
-outcome_Y <-
-vars_X <- c()
-Treatment_W <- 
-causalforest_train <-causal_forest(vars_X, outcome_Y, treatment_W)
+## INCOME GENERATING ACTIVITY - IGA
+# Create outcome and inputs for the Causal Forests (important all numeric; including dummy code the factor variables)
+Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
+X_vars <- model.matrix(lm (Y_outcome ~ age + branchno, data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
+W_treatment <- as.matrix(data_uganda_train$treatment) # Treatment assignment
+causalforests_IGA_train <- causal_forest(X = X_vars,
+                                    Y = Y_outcome,
+                                    W = W_treatment, 
+                                    clusters = vill_id, # paper clusters
+                                    orthog.boosting = TRUE) 
+                                    # but see again!!! Athey and Wager 2019; orthogonalization
+# We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
+
+## Predict the test data
+# Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
+preds_IGA <- predict(
+  object = causalforests_IGA_train, 
+  newdata = model.matrix(~ age + branchno, data = data_uganda_test), 
+  estimate.variance = TRUE
+)
+data_uganda_test$preds <- preds$predictions[, 1]
 
 
 ```

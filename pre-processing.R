@@ -51,7 +51,9 @@ ud_subset <- ud %>%
                     "z_M_baby_ageF","z_M_daught","z_M_son","zALL_empowerment","zALL_M_i_ageF","zALL_M_i_ageM", 
                     "zALL_M_baby_no","zALL_M_baby_ageF","zALL_M_daught", "zALL_M_son","control_body","aspiration", 
                     "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4", "_Bbranch_na_5", "_Bbranch_na_6","_Bbranch_na_7", 
-                    "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10")) 
+                    "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10", "Attitude", "E_Denrolled")) 
+
+# missing Attitude and E_Denrolled (baseline) --> done!
 
 # Replace NA
 ud_subset[is.na(ud_subset)] = 88
