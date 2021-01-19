@@ -10,7 +10,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 # Generalized Randon Forest (cf. Athey and Wager)
-install.packages("grf") 
+#install.packages("grf") 
 ```
 
 ```{r}
@@ -180,14 +180,16 @@ data_uganda_na <- as_tibble(data_uganda_is.na)
 
 #complete cases for selected variables
 data_uganda_na_o <- data_uganda %>%
-  filter(complete.cases(index_empowerment,
+  filter(complete.cases(index_empowerment,# maybe here include partner (we can do an interaction with age)
                         children, 
+                        partner,
                         branchno,
                         age, 
                         rural,
                         income,
                         enroll_school,
-                        study_hours))
+                        study_hours,  # standardization for this one not working NA
+                        vill_id))
 
 
 #data_uganda[complete.cases(data_uganda$index_empowerment),] #try to choose only specific columns to take the complete cases from
@@ -223,6 +225,11 @@ summary(data_uganda_train_v2)
 nrow(data_uganda_train)
 summary(data_uganda_valid_v2)
 nrow(data_uganda_test)
+
+```
+
+```{r}
+
 ```
 
 ### NOTES: USE CAUSAL TREE FROM GRF PACKAGE (TUNE PARAMETERS ALL)
@@ -259,14 +266,16 @@ C_vars <- data_uganda_train$vill_id
 
 W_treatment <- as.matrix(data_uganda_train$treatment) # Treatment assignment
 
+#train causal forest
 causalforests_IGA_train <- causal_forest(X = X_vars,
                                     Y = Y_outcome,
                                     W = W_treatment, 
-                                    num.trees = 2000, #more trees result in better confident intervals
-                                    #clusters = C_vars, # paper clusters
+                                    num.trees = 5000, #more trees result in better confident intervals
+                                    clusters = C_vars, # paper clusters
                                     orthog.boosting = TRUE) 
                                     # but see again!!! Athey and Wager 2019; orthogonalization
 
+### Consider later if to add as instrument club_distance and run instrumental forest instead of causalforest
 
 # We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
 
@@ -282,13 +291,54 @@ preds_IGA <- predict(
 )
 
 
+#data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
 
-data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
-
+# Estimate the conditional average treatment effect on the full sample (CATE).
+CATE_IGA <- average_treatment_effect(causalforests_IGA_train, target.sample = "all")
 
 ```
 
 ## For linear regression
+
+# Evaluate model using test/train split
+```{r}
+#install.packages("Metrics")
+library(Metrics)
+
+# Confusion matrix on test set
+confusion_matrix <- table(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions >= 0.5)
+
+
+#accuracy
+#?/nrow(data_uganda_test) #need to take first value from sum of confusion matrix output
+
+
+#absolute error rate = 9% of the predictions are completely wrong at the moment
+ae <- ae(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
+ae
+
+
+# predict cty from hwy for the test set
+mpg_test$pred <- predict(mpg_model, newdata = mpg_test)
+
+# Evaluate the rmse on both training and test data and print them
+rmse_train <- rmse(causalforests_IGA_train$predictions, causalforests_IGA_train$Y.hat)
+rmse_train
+
+rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
+rmse_test
+
+
+# Evaluate the r-squared on both training and test data.and print them
+rsq_train <- r_squared(mpg_train$pred, mpg_train$cty)
+rsq_test <- r_squared(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
+
+# Plot the predictions (on the x-axis) against the outcome (cty) on the test data
+ggplot(mpg_test, aes(x = pred, y = cty)) + 
+  geom_point() + 
+  geom_abline()
+```
+
 
 # Train the model using test/train split
 ```{r}
@@ -304,27 +354,3 @@ mpg_model <- lm(fmla, mpg_train)
 # Use summary() to examine the model
 summary(mpg_model)
 ```
-
-# Evaluate model using test/train split
-```{r}
-# predict cty from hwy for the training set
-mpg_train$pred <- predict(mpg_model)
-
-# predict cty from hwy for the test set
-mpg_test$pred <- predict(mpg_model, newdata = mpg_test)
-
-# Evaluate the rmse on both training and test data and print them
-(rmse_train <- rmse(mpg_train$pred, mpg_train$cty))
-(rmse_test <- rmse(mpg_test$pred, mpg_test$cty))
-
-
-# Evaluate the r-squared on both training and test data.and print them
-(rsq_train <- r_squared(mpg_train$pred, mpg_train$cty))
-(rsq_test <- r_squared(mpg_test$pred, mpg_test$cty))
-
-# Plot the predictions (on the x-axis) against the outcome (cty) on the test data
-ggplot(mpg_test, aes(x = pred, y = cty)) + 
-  geom_point() + 
-  geom_abline()
-```
-
