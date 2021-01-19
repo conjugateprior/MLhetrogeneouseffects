@@ -33,10 +33,10 @@ ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 
 # Deal with missing values
 ```{r}
-# Replace NA
+# Replace NA (failed)
 ud_subset[is.na(ud_subset)] = 88
 
-# Works NA BUT standardization some variables fail
+# Works NA BUT standardization some variables (this is the one working)
 ud_subset[ud_subset == 88] <- NA
 
 ud_subset_na <- na.omit(ud_subset) # Removes all NA in every row --> 0 rows
@@ -68,7 +68,7 @@ ud_subset$z_Rage_Imarry <- standardize(ud_subset$Rage_Imarry)
 ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho) 
 ```
 
-# Change variables names (model)
+# Draft some variables
 ```{r}
 # qm endline
 # r follow up indexes
@@ -111,7 +111,7 @@ ud_subset$z_M_marrywho <- standardize(ud_subset$M_marrywho)
                     "z_QM_daught", "z_QM_son","Qcontrol_body","Qaspiration","Qiga",
 ```
 
-
+# Change variables names (model)
 ```{r}
 # Rename variables to use in Causal Forests (not all variables in data base)
 data_uganda <- ud_subset %>% # only panel observations (not variables with ALL) # baseline and follow-up

@@ -25,19 +25,32 @@ dim(ud_subset)
 data_uganda_is.na <- data_uganda[!is.na(data_uganda$foll_index_income_gen_act), ]
 data_uganda_na <- as_data_frame(data_uganda_is.na) 
 
+# Complete cases for selected variables - OFER
+data_uganda_na_o <- data_uganda %>%
+  filter(complete.cases(foll_index_income_gen_act,
+                        index_empowerment,
+                        children, 
+                        branchno,
+                        age, 
+                        rural,
+                        income,
+                        enroll_school,
+                        vill_id,
+                        study_hours)) # standardization for this one not working, but good one being used!
+
 ## Datacamp method (ratio 75:25); most of causal forest use this ratio but haven't found true argument to chose this ratio. 
 # Get number of rows
-N <- nrow(data_uganda_na)
+N <- nrow(data_uganda_na_o)
 # Calculate how many rows 75% of N should be and print it; we use round to get an integer
 target <- round(N * 0.75)
 # Create the vector of N uniform random variables: rv
 rv <- runif(N)
 # Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
-data_uganda_train <- data_uganda_na[rv < 0.75, ]
-data_uganda_test <- data_uganda_na[rv >= 0.75, ]
+data_uganda_train <- data_uganda_na_o[rv < 0.75, ]
+data_uganda_test <- data_uganda_na_o[rv >= 0.75, ]
 # Use nrow() to examine ud_train and ud_test
-nrow(data_uganda_train)
-nrow(data_uganda_test)
+nrow(data_uganda_train) # 2314
+nrow(data_uganda_test) # 782 --> large enough?
 
 ## I think it is large enough the data set --> we don't need cross validation to split the data!
 
@@ -64,12 +77,50 @@ set.seed
 ## INCOME GENERATING ACTIVITY - IGA
 # Create outcome and inputs for the Causal Forests (important all numeric; including dummy code the factor variables)
 Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
+
 X_vars <- model.matrix(lm (Y_outcome ~ age + branchno, data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
+
+## OFER 
+X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + index_empowerment + enroll_school + children*age,
+                            #dist_nearclub  
+                           #age
+                             #rich + 
+                             #branchno + 
+                             #value_assets + 
+                             #rural+ 
+                             #want_respect + 
+                           #loan_brac +
+                           #index_empowerment +
+                             #enroll_school + 
+                             #back_school + 
+                             #att_earn_moneyfam +
+                             #work_married+ 
+                           #ablework_married+
+                           #worry_job +
+                           #income +
+                           #back_school+
+                           #partner +
+                           #index_controlbody+
+                           #index_aspiration+
+                           #index_income_gen_act+
+                             #who_decidehusband + 
+                             #children + 
+                             #life_skills + 
+                             #study_hours + 
+                             #sex_unwilling + 
+                             #satisf_income +
+                             #livelihood, 
+                           data = data_uganda_train))
+
 W_treatment <- as.matrix(data_uganda_train$treatment) # Treatment assignment
+
+C_vars <- data_uganda_train$vill_id # Cluster used in paper
+
 causalforests_IGA_train <- causal_forest(X = X_vars,
                                     Y = Y_outcome,
                                     W = W_treatment, 
-                                    clusters = vill_id, # paper clusters
+                                    num.trees = 2000, #more trees result in better confident intervals
+                                    clusters = C_vars, # paper clusters
                                     orthog.boosting = TRUE) 
                                     # but see again!!! Athey and Wager 2019; orthogonalization
 # We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
@@ -78,23 +129,13 @@ causalforests_IGA_train <- causal_forest(X = X_vars,
 # Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
 preds_IGA <- predict(
   object = causalforests_IGA_train, 
-  newdata = model.matrix(~ age + branchno, data = data_uganda_test), 
+  newdata = model.matrix(~ children + branchno + age + rural + income + enroll_school + index_empowerment + children*age, data = data_uganda_test), 
   estimate.variance = TRUE
 )
-data_uganda_test$preds <- preds$predictions[, 1]
+
+data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
 ```
 
-```{r}
-data_uganda_na_o <- data_uganda %>%
-  filter(complete.cases(index_empowerment,
-                        children, 
-                        branchno,
-                        age, 
-                        rural,
-                        income,
-                        enroll_school,
-                        study_hours))
-```
 
 
 ## For linear regression

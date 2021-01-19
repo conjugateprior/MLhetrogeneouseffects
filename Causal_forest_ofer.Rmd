@@ -50,8 +50,6 @@ ud_subset[ud_subset == 88] <- NA
 
 # Generates Data set with no NA -- ASK OFER
 ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
-
-
 ```
 
 # Standardization variables
@@ -149,14 +147,14 @@ data_uganda_na <- as_tibble(data_uganda_is.na)
 
 #complete cases for selected variables
 data_uganda_na_o <- data_uganda %>%
-  filter(complete.cases(index_empowerment,
+  filter(complete.cases(index_empowerment, # maybe here include partner (we can do an interaction with age)
                         children, 
                         branchno,
                         age, 
                         rural,
                         income,
                         enroll_school,
-                        study_hours))
+                        study_hours)) # standardization for this one not working NA
 
 #data_uganda[complete.cases(data_uganda$index_empowerment),] #try to choose only specific columns to take the complete cases from
 
@@ -207,7 +205,8 @@ set.seed
 Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
 #attach outcome to train data
 
-X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age,
+# # NOTE MSO: study_hours standardize not working, but good news! here you don't use the standardize (I don;t changed the name of the standardize one)
+X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age, 
                             #dist_nearclub  
                            #age
                              #rich + 
@@ -250,7 +249,8 @@ causalforests_IGA_train <- causal_forest(X = X_vars,
                                     Y = Y_outcome,
                                     W = W_treatment, 
                                     num.trees = 2000, #more trees result in better confident intervals
-                                    #clusters = C_vars, # paper clusters
+                                    #clusters = C_vars, # paper clusters 
+                                    ## NOTE MSO: include it in the complete cases command, then it works with the clusters
                                     orthog.boosting = TRUE) 
                                     # but see again!!! Athey and Wager 2019; orthogonalization
 ?causal_forest
@@ -263,7 +263,6 @@ preds_IGA <- predict(
   newdata = model.matrix(~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age, data = data_uganda_test), 
   estimate.variance = TRUE
 )
-
 
 
 data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
