@@ -33,6 +33,37 @@ ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 # Creat subset
 ```{r pressure, echo=FALSE}
 # Remove variables that are were used to create indexes/keep all indexes 
+##removes variables that are were used to create indexes 
+##keeping all indexes 
+ud_subset <- ud %>% 
+  subset(select = c("HHAssetvalue_total", "HHF_loanbrac", "HHM_whoshouldearn","M_ablework_if",
+                    "M_children", "M_marrywhen", "M_marrywho", "M_wanttowork_if","QC_clubheard",
+                    "QC_clubparticipateIMP", "QC_stillgoing", "QE_Denrolled", "Qage",
+                    "Qback_school","Qhsworked_year_empl","Qhsworked_year_self", "Qincind_empl",
+                    "Qincind_selfempl", "Qincome_year_ind", "QlifeskillMOREfew",
+                    "QlifeskillMOREfewIMP","QlivelihoodMOREfew", "QlivelihoodMOREfewIMP", "Qoften1WEEK", "Qoften3WEEK", 
+                    "Qstudy_hours", "Qworry_job", "RC_clubheard","RC_clubparticipateIMP","RC_stillgoing","RE_Denrolled", 
+                    "Rage", "Rback_school", "Rhsworked_year_self", "Rhsworked_year_empl", "Rincind_empl", "Rincind_selfempl", "Rstudy_hours",
+                    "Rworry_job", "age", "back_school","baseline", "branch_name", "branchno", "dist_nearclub","endline", 
+                    "follow_up", "hsworked_year_empl", "hsworked_year_self", "id", "idno","incind_empl", "incind_selfempl",
+                    "income_year_ind", "lifeskillMOREfew", "lifeskillMOREfewIMP","livelihoodMOREfew","livelihoodMOREfewIMP",
+                    "often1WEEK","often3WEEK", "satisfaction_income", "selfempl","study_hours",
+                    "treatment", "villid", "worry_job", "age_Imarry", "Rage_Imarry",          
+                    "rural", "rich","below16","z_QEntrep_total", "z_Qany_iga", "z_Qselfempl", "z_Qempl","z_QExpenditure_totDF", 
+                    "QM_chi","Qpart", "z_QM_chi","z_Qpart","z_QR_sexu","z_Qsex_p", "z_QRhiv_s", "z_Qalways_c", "z_Qother_c", "QM_baby_no",           
+                    "QM_son", "z_Qempowerment", "z_QM_i_ageF","z_QM_i_ageM","z_QM_baby_no","z_QM_baby_ageF",       
+                    "z_QM_daught", "z_QM_son","Qcontrol_body","Qaspiration","Qiga","z_REntrep_total","z_Rany_iga","z_Rselfempl","z_Rempl",               
+                    "z_RExpenditure_totDF", "RM_chi", "Rpart", "RR_sexu", "Ralways_c","Rother_c","z_RM_chi",              
+                    "z_Rpart", "z_RR_sexu", "z_Rsex_p", "z_RRhiv_s", "z_Ralways_c","z_Rother_c",
+                    "z_Rempowerment","z_RM_i_ageF","z_RM_i_ageM","z_RM_baby_no","z_RM_baby_ageF","z_RM_daught","z_RM_son",
+                    "Rcontrol_body","Raspiration","Riga", "z_Entrep_total","z_any_iga", "z_selfempl","z_empl","z_Expenditure_totDF",
+                    "zALL_Entrep_total","zALL_any_iga","zALL_selfempl","zALL_empl", "zALL_Expenditure_totDF", "M_chi","part",                
+                    "always_c","other_c","z_M_chi", "z_part","z_R_sexu","z_sex_p","z_Rhiv_s","z_always_c","z_other_c","zALL_R_sexu",
+                    "zALL_sex_p", "zALL_Rhiv_s","zALL_always_c","zALL_other_c","z_empowerment","z_M_i_ageF","z_M_i_ageM","z_M_baby_no",
+                    "z_M_baby_ageF","z_M_daught","z_M_son","zALL_empowerment","zALL_M_i_ageF","zALL_M_i_ageM", 
+                    "zALL_M_baby_no","zALL_M_baby_ageF","zALL_M_daught", "zALL_M_son","control_body","aspiration", 
+                    "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4", "_Bbranch_na_5", "_Bbranch_na_6","_Bbranch_na_7", 
+                    "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10", "Attitude", "E_Denrolled")) 
 
 # add subset attitude!
 
@@ -136,8 +167,8 @@ data_uganda <- ud_subset %>% # only panel observations (not variables with ALL) 
 
 
 ```{r}
-summary(ud_subset)
-dim(ud_subset)
+summary(data_uganda)
+dim(data_uganda)
 ```
 
 
@@ -157,6 +188,7 @@ data_uganda_na_o <- data_uganda %>%
                         income,
                         enroll_school,
                         study_hours))
+
 
 #data_uganda[complete.cases(data_uganda$index_empowerment),] #try to choose only specific columns to take the complete cases from
 
@@ -207,35 +239,16 @@ set.seed
 Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
 #attach outcome to train data
 
-X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age,
-                            #dist_nearclub  
-                           #age
-                             #rich + 
-                             #branchno + 
-                             #value_assets + 
-                             #rural+ 
-                             #want_respect + 
-                           #loan_brac +
-                           #index_empowerment +
-                             #enroll_school + 
-                             #back_school + 
-                             #att_earn_moneyfam +
-                             #work_married+ 
-                           #ablework_married+
-                           #worry_job +
-                           #income +
-                           #back_school+
-                           #partner +
-                           #index_controlbody+
-                           #index_aspiration+
-                           #index_income_gen_act+
-                             #who_decidehusband + 
-                             #children + 
-                             #life_skills + 
-                             #study_hours + 
-                             #sex_unwilling + 
-                             #satisf_income +
-                             #livelihood, 
+X_vars <- model.matrix(lm (Y_outcome ~ children + 
+                             branchno + 
+                             age + 
+                             rural + 
+                             income + 
+                             enroll_school + 
+                             study_hours+ 
+                             index_empowerment + 
+                             enroll_school*study_hours + 
+                             children*age,
                            data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
 
 
@@ -253,14 +266,18 @@ causalforests_IGA_train <- causal_forest(X = X_vars,
                                     #clusters = C_vars, # paper clusters
                                     orthog.boosting = TRUE) 
                                     # but see again!!! Athey and Wager 2019; orthogonalization
-?causal_forest
+
+
 # We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
 
 ## Predict the test data
 # Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
 preds_IGA <- predict(
   object = causalforests_IGA_train, 
-  newdata = model.matrix(~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age, data = data_uganda_test), 
+  newdata = model.matrix(~ children + branchno + age + rural + income +
+                           enroll_school + study_hours+ index_empowerment
+                          +enroll_school*study_hours  + children*age,
+                         data= data_uganda_test), 
   estimate.variance = TRUE
 )
 
