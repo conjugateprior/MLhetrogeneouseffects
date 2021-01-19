@@ -132,6 +132,12 @@ data_uganda <- ud_subset %>% # only panel observations (not variables with ALL) 
   
 ```
 
+```{r}
+#add a dummy variable indicating if indication is na or not
+data_uganda$partner_na <- ifelse(is.na(data_uganda$partner), 1, 0)
+  
+
+```
 
 ```{r}
 summary(ud_subset)
