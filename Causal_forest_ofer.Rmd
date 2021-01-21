@@ -14,8 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-
-
+#Load libraries
 library(haven)
 library(caret)
 library(tidyverse) # remember includes dplyr
@@ -171,6 +170,139 @@ summary(data_uganda)
 dim(data_uganda)
 ```
 
+```{r}
+##Dealing with missing values
+#add a dummy variable indicating if indication is na or not
+#partner
+data_uganda$partner_na <- ifelse(is.na(data_uganda$partner), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(partner = replace_na(partner, 1))
+#brnach no
+data_uganda$branchno_na <- ifelse(is.na(data_uganda$branchno), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(branchno = replace_na(branchno, 1))
+#attitude who should earn money family
+data_uganda$att_earn_moneyfam_na <- ifelse(is.na(data_uganda$att_earn_moneyfam), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(att_earn_moneyfam = replace_na(att_earn_moneyfam, 1))
+#enrolled in school
+data_uganda$enroll_school_na <- ifelse(is.na(data_uganda$enroll_school), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(enroll_school = replace_na(enroll_school, 1))
+#entrep total
+data_uganda$z_Entrep_total_na <- ifelse(is.na(data_uganda$z_Entrep_total), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(z_Entrep_total = replace_na(z_Entrep_total, 1))
+#expenditure total
+data_uganda$z_Expenditure_totDF_na <- ifelse(is.na(data_uganda$z_Expenditure_totDF), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(z_Expenditure_totDF = replace_na(z_Expenditure_totDF, 1))
+#asset value
+data_uganda$value_assets_na <- ifelse(is.na(data_uganda$value_assets), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(value_assets = replace_na(value_assets, 1))
+#loan brac
+data_uganda$loan_brac_na <- ifelse(is.na(data_uganda$loan_brac), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(loan_brac = replace_na(loan_brac, 1))
+#able to work when married
+data_uganda$ablework_married_na <- ifelse(is.na(data_uganda$ablework_married), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(ablework_married = replace_na(ablework_married, 1))
+# M children
+data_uganda$M_children_na <- ifelse(is.na(data_uganda$M_children), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(M_children = replace_na(M_children, 1))
+#marry when
+data_uganda$M_marrywhen_na <- ifelse(is.na(data_uganda$M_marrywhen), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(M_marrywhen = replace_na(M_marrywhen, 1))
+#who decide husband
+data_uganda$who_decidehusband_na <- ifelse(is.na(data_uganda$who_decidehusband), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(who_decidehusband = replace_na(who_decidehusband, 1))
+
+#work when married
+data_uganda$work_married_na <- ifelse(is.na(data_uganda$work_married), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(work_married = replace_na(work_married, 1))
+
+#want respect
+data_uganda$want_respect_na <- ifelse(is.na(data_uganda$want_respect), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(want_respect = replace_na(want_respect, 1))
+
+#study hours
+data_uganda$study_hours_na <- ifelse(is.na(data_uganda$study_hours), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(study_hours = replace_na(study_hours, 1))
+
+#worry job
+data_uganda$worry_job_na <- ifelse(is.na(data_uganda$worry_job), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(worry_job = replace_na(worry_job, 1))
+
+#satisfaction income
+data_uganda$satisf_income_na <- ifelse(is.na(data_uganda$satisf_income), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(satisf_income = replace_na(satisf_income, 1))
+
+#self employed
+data_uganda$selfempl_na <- ifelse(is.na(data_uganda$selfempl), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(selfempl = replace_na(selfempl, 1))
+
+#hours worked year employed
+data_uganda$hsworked_year_empl_na <- ifelse(is.na(data_uganda$hsworked_year_empl), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(hsworked_year_empl = replace_na(hsworked_year_empl, 1))
+
+#hours worked year self employed
+data_uganda$hsworked_year_self_na <- ifelse(is.na(data_uganda$hsworked_year_self), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(hsworked_year_self = replace_na(hsworked_year_self, 1))
+
+#income
+data_uganda$income_na <- ifelse(is.na(data_uganda$income), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(income = replace_na(income, 1))
+
+#index_empowerment
+data_uganda$index_empowerment_na <- ifelse(is.na(data_uganda$index_empowerment), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(index_empowerment = replace_na(index_empowerment, 1))
+
+#children
+data_uganda$children_na <- ifelse(is.na(data_uganda$children), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(children = replace_na(children, 1))
+
+#life_skills
+data_uganda$life_skills_na <- ifelse(is.na(data_uganda$life_skills), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(life_skills = replace_na(life_skills, 1))
+
+#livelihood
+data_uganda$livelihood_na <- ifelse(is.na(data_uganda$livelihood), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(livelihood = replace_na(livelihood, 1))
+
+#livelihood
+data_uganda$livelihood_na <- ifelse(is.na(data_uganda$livelihood), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(livelihood = replace_na(livelihood, 1))
+
+#rural
+data_uganda$rural_na <- ifelse(is.na(data_uganda$rural), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(rural = replace_na(rural, 1))
+
+#age
+data_uganda$age_na <- ifelse(is.na(data_uganda$age), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(age = replace_na(age, 1))
+```
+
 
 # Spliting the dataset into train and test set. Why? to not have overfiting problems. 
 ```{r}
@@ -180,7 +312,8 @@ data_uganda_na <- as_tibble(data_uganda_is.na)
 
 #complete cases for selected variables
 data_uganda_na_o <- data_uganda %>%
-  filter(complete.cases(index_empowerment,# maybe here include partner (we can do an interaction with age)
+  filter(complete.cases(index_empowerment,
+                        foll_index_income_gen_act,# maybe here include partner (we can do an interaction with age)
                         children, 
                         partner,
                         branchno,
@@ -204,12 +337,12 @@ data_uganda_na_o <- data_uganda %>%
 # Get number of rows
 N <- nrow(data_uganda_na_o)
 # Calculate how many rows 75% of N should be and print it; we use round to get an integer
-target <- round(N * 0.75)
+target <- round(N * 0.80)
 # Create the vector of N uniform random variables: rv
 rv <- runif(N)
 # Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
-data_uganda_train <- data_uganda_na_o[rv < 0.75, ]
-data_uganda_test <- data_uganda_na_o[rv >= 0.75, ]
+data_uganda_train <- data_uganda_na_o[rv < 0.80, ]
+data_uganda_test <- data_uganda_na_o[rv >= 0.80, ]
 # Use nrow() to examine ud_train and ud_test
 nrow(data_uganda_train)
 nrow(data_uganda_test)
@@ -222,9 +355,9 @@ train <- sample(nrow(data_uganda_na_o), 0.7*nrow(data_uganda_na_o), replace = FA
 data_uganda_train_v2 <- data_uganda_na_o[train,] #  Train is like the data we would collect in a randomized experiment 
 data_uganda_valid_v2 <- data_uganda_na_o[-train,] # Test would be the future cases which we are trying to predict
 summary(data_uganda_train_v2)
-nrow(data_uganda_train)
+nrow(data_uganda_train_v2)
 summary(data_uganda_valid_v2)
-nrow(data_uganda_test)
+nrow(data_uganda_valid_v2)
 
 ```
 
@@ -246,20 +379,19 @@ set.seed
 Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
 #attach outcome to train data
 
-X_vars <- model.matrix(lm (Y_outcome ~ children + 
-                             branchno + 
-                             age + 
-                             rural + 
-                             income + 
-                             enroll_school + 
-                             study_hours+ 
-                             index_empowerment + 
+X_vars <- model.matrix(lm (Y_outcome ~ children + children_na +
+                             branchno + branchno_na +
+                             age + age_na +
+                             rural + rural_na +
+                             income + income_na + 
+                             enroll_school + enroll_school_na +
+                             study_hours+ study_hours_na + 
+                             index_empowerment + index_empowerment_na +
                              enroll_school*study_hours + 
-                             children*age,
+                             enroll_school_na*study_hours_na +
+                             children*age +
+                             children_na*age_na,
                            data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
-
-
-#X_vars <- model.matrix(lm (Y_outcome ~ children, data = data_uganda_train)) #model that works
 
 C_vars <- data_uganda_train$vill_id
 
@@ -283,22 +415,28 @@ causalforests_IGA_train <- causal_forest(X = X_vars,
 # Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
 preds_IGA <- predict(
   object = causalforests_IGA_train, 
-  newdata = model.matrix(~ children + branchno + age + rural + income +
-                           enroll_school + study_hours+ index_empowerment
-                          +enroll_school*study_hours  + children*age,
+  newdata = model.matrix(~ children + children_na +
+                             branchno + branchno_na +
+                             age + age_na +
+                             rural + rural_na +
+                             income + income_na + 
+                             enroll_school + enroll_school_na +
+                             study_hours+ study_hours_na + 
+                             index_empowerment + index_empowerment_na +
+                             enroll_school*study_hours + 
+                             enroll_school_na*study_hours_na +
+                             children*age +
+                             children_na*age_na,
                          data= data_uganda_test), 
   estimate.variance = TRUE
 )
 
-
 #data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
 
-# Estimate the conditional average treatment effect on the full sample (CATE).
+# Estimate the conditional average treatment effect of the train model the full sample (CATE).
 CATE_IGA <- average_treatment_effect(causalforests_IGA_train, target.sample = "all")
 
 ```
-
-## For linear regression
 
 # Evaluate model using test/train split
 ```{r}
@@ -309,6 +447,12 @@ library(Metrics)
 confusion_matrix <- table(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions >= 0.5)
 
 
+xtab <- table(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
+confusionMatrix(xtab)
+
+confusionMatrix(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
+preds_IGA$predictions
+
 #accuracy
 #?/nrow(data_uganda_test) #need to take first value from sum of confusion matrix output
 
@@ -318,39 +462,26 @@ ae <- ae(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
 ae
 
 
-# predict cty from hwy for the test set
-mpg_test$pred <- predict(mpg_model, newdata = mpg_test)
-
 # Evaluate the rmse on both training and test data and print them
-rmse_train <- rmse(causalforests_IGA_train$predictions, causalforests_IGA_train$Y.hat)
+rmse_train <- rmse(causalforests_IGA_train1$predictions, data_uganda_train_v2$foll_index_income_gen_act)
 rmse_train
 
-rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
+rmse_test <- rmse(preds_IGA1$predictions, data_uganda_valid_v2$foll_index_income_gen_act)
 rmse_test
 
-
-# Evaluate the r-squared on both training and test data.and print them
-rsq_train <- r_squared(mpg_train$pred, mpg_train$cty)
-rsq_test <- r_squared(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
-
-# Plot the predictions (on the x-axis) against the outcome (cty) on the test data
-ggplot(mpg_test, aes(x = pred, y = cty)) + 
-  geom_point() + 
-  geom_abline()
 ```
 
-
-# Train the model using test/train split
+Evaluating model performance
 ```{r}
-# Datacamp method
-summary(ud_train)
+library(gmodels)
+#“cross tabulation indicating the agreement between the predicted and actual label vectors.” Excerpt From: Brett Lantz. “Machine Learning with R.” 
+ 
+cross_tab <- CrossTable(x = data_uganda_test$foll_index_income_gen_act, 
+                        y = preds_IGA$predictions, prop.chisq = FALSE)
 
-# Formula to express cty as a function of hwy: fmla and print it.
-(fmla <- cty~hwy)
 
-# Now use lm() to build a model mpg_model from mpg_train that predicts cty from hwy 
-mpg_model <- lm(fmla, mpg_train)
 
-# Use summary() to examine the model
-summary(mpg_model)
+
+
 ```
+
