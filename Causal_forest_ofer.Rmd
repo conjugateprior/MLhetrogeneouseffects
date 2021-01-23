@@ -523,3 +523,23 @@ rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_
 rmse_test
 
 ```
+
+BART Model for hetrogeneity estimation
+```{r}
+#install.packages("bartMachine")
+library(bartMachine)
+
+Bart_model_IGA <- bartMachine(X = X_baseline,
+                              Y = Y_outcome,
+                              Xy = data_uganda_train,
+                              num_trees = 3000,
+                              k = 2,
+                              use_missing_data = TRUE)
+                      
+
+
+
+
+
+```
+
