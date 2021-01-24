@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Generalized Randon Forest (cf. Athey and Wager)
 install.packages("grf") 
+install.packages("DiagrammeR")
 ```
 
 ```{r}
@@ -70,6 +71,7 @@ nrow(data_uganda_test)
 # Train a Causal Forests
 ```{r}
 library(grf)
+library(DiagrammeR)
 
 # Random seed to reproduce results
 set.seed
@@ -80,8 +82,8 @@ Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector out
 
 X_vars <- model.matrix(lm (Y_outcome ~ age + branchno, data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
 
-## OFER 
-X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + index_empowerment + enroll_school + children*age,
+## OFER --> TO DO: RUN without lm!!!??
+X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age,
                             #dist_nearclub  
                            #age
                              #rich + 
@@ -125,6 +127,9 @@ causalforests_IGA_train <- causal_forest(X = X_vars,
                                     # but see again!!! Athey and Wager 2019; orthogonalization
 # We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
 
+# Graph Causal Forests
+plot(tree <- get_tree(causalforests_IGA_train, 1))
+
 ## Predict the test data
 # Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
 preds_IGA <- predict(
@@ -134,6 +139,19 @@ preds_IGA <- predict(
 )
 
 data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
+```
+
+# Variable importance and graph CATE
+```{r}
+# 
+varimp_model_wlm <- variable_importance(causalforests_IGA_train ) # A matrix of importance measure, one row for each predictor variable. The column(s) are different importance measures.
+selected_imp_variables <- which ( varimp_model_wlm > mean ( varimp_model_wlm ))
+causalforests_IGA_train_vimpo <- causal_forest(X = X_vars[,selected_imp_variables],
+                                                Y = Y_outcome,
+                                                W = W_treatment,
+                                                clusters = C_vars
+                                                )
+tau.hat = predict (cf )$ predictions
 ```
 
 
