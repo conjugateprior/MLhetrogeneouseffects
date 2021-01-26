@@ -318,12 +318,12 @@ data_uganda <- data_uganda %>%
 # Get number of rows
 N <- nrow(data_uganda)
 # Calculate how many rows 75% of N should be and print it; we use round to get an integer
-target <- round(N * 0.80)
+target <- round(N * 0.75)
 # Create the vector of N uniform random variables: rv
 rv <- runif(N)
 # Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
-data_uganda_train <- data_uganda[rv < 0.80, ]
-data_uganda_test <- data_uganda[rv >= 0.80, ]
+data_uganda_train <- data_uganda[rv < 0.75, ]
+data_uganda_test <- data_uganda[rv >= 0.75, ]
 # Use nrow() to examine ud_train and ud_test
 nrow(data_uganda_train)
 nrow(data_uganda_test)
