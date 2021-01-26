@@ -10,12 +10,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 # Generalized Randon Forest (cf. Athey and Wager)
-install.packages("grf") 
+#install.packages("grf") 
 ```
 
 ```{r}
-
-
+#Load libraries
 library(haven)
 library(caret)
 library(tidyverse) # remember includes dplyr
@@ -33,6 +32,37 @@ ud <- read_dta("Uganda ELA Panel wide_Creation.dta")
 # Creat subset
 ```{r pressure, echo=FALSE}
 # Remove variables that are were used to create indexes/keep all indexes 
+##removes variables that are were used to create indexes 
+##keeping all indexes 
+ud_subset <- ud %>% 
+  subset(select = c("HHAssetvalue_total", "HHF_loanbrac", "HHM_whoshouldearn","M_ablework_if",
+                    "M_children", "M_marrywhen", "M_marrywho", "M_wanttowork_if","QC_clubheard",
+                    "QC_clubparticipateIMP", "QC_stillgoing", "QE_Denrolled", "Qage",
+                    "Qback_school","Qhsworked_year_empl","Qhsworked_year_self", "Qincind_empl",
+                    "Qincind_selfempl", "Qincome_year_ind", "QlifeskillMOREfew",
+                    "QlifeskillMOREfewIMP","QlivelihoodMOREfew", "QlivelihoodMOREfewIMP", "Qoften1WEEK", "Qoften3WEEK", 
+                    "Qstudy_hours", "Qworry_job", "RC_clubheard","RC_clubparticipateIMP","RC_stillgoing","RE_Denrolled", 
+                    "Rage", "Rback_school", "Rhsworked_year_self", "Rhsworked_year_empl", "Rincind_empl", "Rincind_selfempl", "Rstudy_hours",
+                    "Rworry_job", "age", "back_school","baseline", "branch_name", "branchno", "dist_nearclub","endline", 
+                    "follow_up", "hsworked_year_empl", "hsworked_year_self", "id", "idno","incind_empl", "incind_selfempl",
+                    "income_year_ind", "lifeskillMOREfew", "lifeskillMOREfewIMP","livelihoodMOREfew","livelihoodMOREfewIMP",
+                    "often1WEEK","often3WEEK", "satisfaction_income", "selfempl","study_hours",
+                    "treatment", "villid", "worry_job", "age_Imarry", "Rage_Imarry",          
+                    "rural", "rich","below16","z_QEntrep_total", "z_Qany_iga", "z_Qselfempl", "z_Qempl","z_QExpenditure_totDF", 
+                    "QM_chi","Qpart", "z_QM_chi","z_Qpart","z_QR_sexu","z_Qsex_p", "z_QRhiv_s", "z_Qalways_c", "z_Qother_c", "QM_baby_no",           
+                    "QM_son", "z_Qempowerment", "z_QM_i_ageF","z_QM_i_ageM","z_QM_baby_no","z_QM_baby_ageF",       
+                    "z_QM_daught", "z_QM_son","Qcontrol_body","Qaspiration","Qiga","z_REntrep_total","z_Rany_iga","z_Rselfempl","z_Rempl",               
+                    "z_RExpenditure_totDF", "RM_chi", "Rpart", "RR_sexu", "Ralways_c","Rother_c","z_RM_chi",              
+                    "z_Rpart", "z_RR_sexu", "z_Rsex_p", "z_RRhiv_s", "z_Ralways_c","z_Rother_c",
+                    "z_Rempowerment","z_RM_i_ageF","z_RM_i_ageM","z_RM_baby_no","z_RM_baby_ageF","z_RM_daught","z_RM_son",
+                    "Rcontrol_body","Raspiration","Riga", "z_Entrep_total","z_any_iga", "z_selfempl","z_empl","z_Expenditure_totDF",
+                    "zALL_Entrep_total","zALL_any_iga","zALL_selfempl","zALL_empl", "zALL_Expenditure_totDF", "M_chi","part",                
+                    "always_c","other_c","z_M_chi", "z_part","z_R_sexu","z_sex_p","z_Rhiv_s","z_always_c","z_other_c","zALL_R_sexu",
+                    "zALL_sex_p", "zALL_Rhiv_s","zALL_always_c","zALL_other_c","z_empowerment","z_M_i_ageF","z_M_i_ageM","z_M_baby_no",
+                    "z_M_baby_ageF","z_M_daught","z_M_son","zALL_empowerment","zALL_M_i_ageF","zALL_M_i_ageM", 
+                    "zALL_M_baby_no","zALL_M_baby_ageF","zALL_M_daught", "zALL_M_son","control_body","aspiration", 
+                    "iga","igaALL", "_Bbranch_na_2","_Bbranch_na_3","_Bbranch_na_4", "_Bbranch_na_5", "_Bbranch_na_6","_Bbranch_na_7", 
+                    "_Bbranch_na_8","_Bbranch_na_9", "_Bbranch_na_10", "Attitude", "E_Denrolled")) 
 
 # add subset attitude!
 
@@ -50,6 +80,8 @@ ud_subset[ud_subset == 88] <- NA
 
 # Generates Data set with no NA -- ASK OFER
 ud_subset_na <- as.data.frame(na.omit(apply(ud_subset,2,function (x) x[order(is.na(x))])))
+
+
 ```
 
 # Standardization variables
@@ -132,16 +164,124 @@ data_uganda <- ud_subset %>% # only panel observations (not variables with ALL) 
   
 ```
 
-```{r}
-#add a dummy variable indicating if indication is na or not
-data_uganda$partner_na <- ifelse(is.na(data_uganda$partner), 1, 0)
-  
 
+```{r}
+summary(data_uganda)
+dim(data_uganda)
 ```
 
 ```{r}
-summary(ud_subset)
-dim(ud_subset)
+##Dealing with missing values
+#add a dummy variable indicating if indication is na or not
+#partner
+data_uganda$partner_na <- ifelse(is.na(data_uganda$partner), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(partner = replace_na(partner, 1))
+#brnach no
+data_uganda$branchno_na <- ifelse(is.na(data_uganda$branchno), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(branchno = replace_na(branchno, 1))
+#attitude who should earn money family
+data_uganda$att_earn_moneyfam_na <- ifelse(is.na(data_uganda$att_earn_moneyfam), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(att_earn_moneyfam = replace_na(att_earn_moneyfam, 1))
+#enrolled in school
+data_uganda$enroll_school_na <- ifelse(is.na(data_uganda$enroll_school), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(enroll_school = replace_na(enroll_school, 1))
+#entrep total
+data_uganda$z_Entrep_total_na <- ifelse(is.na(data_uganda$z_Entrep_total), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(z_Entrep_total = replace_na(z_Entrep_total, 1))
+#expenditure total
+data_uganda$z_Expenditure_totDF_na <- ifelse(is.na(data_uganda$z_Expenditure_totDF), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(z_Expenditure_totDF = replace_na(z_Expenditure_totDF, 1))
+#asset value
+data_uganda$value_assets_na <- ifelse(is.na(data_uganda$value_assets), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(value_assets = replace_na(value_assets, 1))
+#loan brac
+data_uganda$loan_brac_na <- ifelse(is.na(data_uganda$loan_brac), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(loan_brac = replace_na(loan_brac, 1))
+#able to work when married
+data_uganda$ablework_married_na <- ifelse(is.na(data_uganda$ablework_married), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(ablework_married = replace_na(ablework_married, 1))
+# M children
+data_uganda$M_children_na <- ifelse(is.na(data_uganda$M_children), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(M_children = replace_na(M_children, 1))
+#marry when
+data_uganda$M_marrywhen_na <- ifelse(is.na(data_uganda$M_marrywhen), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(M_marrywhen = replace_na(M_marrywhen, 1))
+#who decide husband
+data_uganda$who_decidehusband_na <- ifelse(is.na(data_uganda$who_decidehusband), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(who_decidehusband = replace_na(who_decidehusband, 1))
+#work when married
+data_uganda$work_married_na <- ifelse(is.na(data_uganda$work_married), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(work_married = replace_na(work_married, 1))
+#want respect
+data_uganda$want_respect_na <- ifelse(is.na(data_uganda$want_respect), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(want_respect = replace_na(want_respect, 1))
+#study hours
+data_uganda$study_hours_na <- ifelse(is.na(data_uganda$study_hours), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(study_hours = replace_na(study_hours, 1))
+#worry job
+data_uganda$worry_job_na <- ifelse(is.na(data_uganda$worry_job), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(worry_job = replace_na(worry_job, 1))
+#satisfaction income
+data_uganda$satisf_income_na <- ifelse(is.na(data_uganda$satisf_income), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(satisf_income = replace_na(satisf_income, 1))
+#self employed
+data_uganda$selfempl_na <- ifelse(is.na(data_uganda$selfempl), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(selfempl = replace_na(selfempl, 1))
+#hours worked year employed
+data_uganda$hsworked_year_empl_na <- ifelse(is.na(data_uganda$hsworked_year_empl), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(hsworked_year_empl = replace_na(hsworked_year_empl, 1))
+#hours worked year self employed
+data_uganda$hsworked_year_self_na <- ifelse(is.na(data_uganda$hsworked_year_self), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(hsworked_year_self = replace_na(hsworked_year_self, 1))
+#income
+data_uganda$income_na <- ifelse(is.na(data_uganda$income), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(income = replace_na(income, 1))
+#index_empowerment
+data_uganda$index_empowerment_na <- ifelse(is.na(data_uganda$index_empowerment), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(index_empowerment = replace_na(index_empowerment, 1))
+#children
+data_uganda$children_na <- ifelse(is.na(data_uganda$children), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(children = replace_na(children, 1))
+#life_skills
+data_uganda$life_skills_na <- ifelse(is.na(data_uganda$life_skills), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(life_skills = replace_na(life_skills, 1))
+#livelihood
+data_uganda$livelihood_na <- ifelse(is.na(data_uganda$livelihood), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(livelihood = replace_na(livelihood, 1))
+
+#rural
+data_uganda$rural_na <- ifelse(is.na(data_uganda$rural), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(rural = replace_na(rural, 1))
+#age
+data_uganda$age_na <- ifelse(is.na(data_uganda$age), 1, 0)
+data_uganda <- data_uganda %>% 
+  mutate(age = replace_na(age, 1))
 ```
 
 
@@ -152,15 +292,19 @@ data_uganda_is.na <- data_uganda[!is.na(data_uganda$foll_index_income_gen_act), 
 data_uganda_na <- as_tibble(data_uganda_is.na) 
 
 #complete cases for selected variables
-data_uganda_na_o <- data_uganda %>%
-  filter(complete.cases(index_empowerment, # maybe here include partner (we can do an interaction with age)
+data_uganda <- data_uganda %>%
+  filter(complete.cases(index_empowerment,
+                        foll_index_income_gen_act,# maybe here include partner (we can do an interaction with age)
                         children, 
+                        partner,
                         branchno,
                         age, 
                         rural,
                         income,
                         enroll_school,
-                        study_hours)) # standardization for this one not working NA
+                        study_hours,  # standardization for this one not working NA
+                        vill_id))
+
 
 #data_uganda[complete.cases(data_uganda$index_empowerment),] #try to choose only specific columns to take the complete cases from
 
@@ -172,14 +316,14 @@ data_uganda_na_o <- data_uganda %>%
 ```{r}
 ## Datacamp method (ratio 75:25); most of causal forest use this ratio but haven't found true argument to chose this ratio. 
 # Get number of rows
-N <- nrow(data_uganda_na_o)
+N <- nrow(data_uganda)
 # Calculate how many rows 75% of N should be and print it; we use round to get an integer
-target <- round(N * 0.75)
+target <- round(N * 0.80)
 # Create the vector of N uniform random variables: rv
 rv <- runif(N)
 # Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
-data_uganda_train <- data_uganda_na_o[rv < 0.75, ]
-data_uganda_test <- data_uganda_na_o[rv >= 0.75, ]
+data_uganda_train <- data_uganda[rv < 0.80, ]
+data_uganda_test <- data_uganda[rv >= 0.80, ]
 # Use nrow() to examine ud_train and ud_test
 nrow(data_uganda_train)
 nrow(data_uganda_test)
@@ -192,9 +336,14 @@ train <- sample(nrow(data_uganda_na_o), 0.7*nrow(data_uganda_na_o), replace = FA
 data_uganda_train_v2 <- data_uganda_na_o[train,] #  Train is like the data we would collect in a randomized experiment 
 data_uganda_valid_v2 <- data_uganda_na_o[-train,] # Test would be the future cases which we are trying to predict
 summary(data_uganda_train_v2)
-nrow(data_uganda_train)
+nrow(data_uganda_train_v2)
 summary(data_uganda_valid_v2)
-nrow(data_uganda_test)
+nrow(data_uganda_valid_v2)
+
+```
+
+```{r}
+
 ```
 
 ### NOTES: USE CAUSAL TREE FROM GRF PACKAGE (TUNE PARAMETERS ALL)
@@ -211,108 +360,213 @@ set.seed
 Y_outcome <- as.matrix(data_uganda_train$foll_index_income_gen_act) # Vector outcome of interest
 #attach outcome to train data
 
-# # NOTE MSO: study_hours standardize not working, but good news! here you don't use the standardize (I don;t changed the name of the standardize one)
-X_vars <- model.matrix(lm (Y_outcome ~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age, 
-                            #dist_nearclub  
-                           #age
-                             #rich + 
-                             #branchno + 
-                             #value_assets + 
-                             #rural+ 
-                             #want_respect + 
-                           #loan_brac +
-                           #index_empowerment +
-                             #enroll_school + 
-                             #back_school + 
-                             #att_earn_moneyfam +
-                             #work_married+ 
-                           #ablework_married+
-                           #worry_job +
-                           #income +
-                           #back_school+
-                           #partner +
-                           #index_controlbody+
-                           #index_aspiration+
-                           #index_income_gen_act+
-                             #who_decidehusband + 
-                             #children + 
-                             #life_skills + 
-                             #study_hours + 
-                             #sex_unwilling + 
-                             #satisf_income +
-                             #livelihood, 
+X_vars <- model.matrix(lm (Y_outcome ~ children + children_na +
+                             branchno + branchno_na +
+                             age + age_na +
+                             rural + rural_na +
+                             income + income_na + 
+                             enroll_school + enroll_school_na +
+                             study_hours+ study_hours_na + 
+                             index_empowerment + index_empowerment_na +
+                             enroll_school*study_hours + 
+                             enroll_school_na*study_hours_na +
+                             children*age +
+                             children_na*age_na,
                            data = data_uganda_train)) # X is a matrix of the covariates which we are using to predict heterogeneity in treatment effect
 
+X_baseline <- model.matrix(lm(Y_outcome ~ children + children_na +
+                                branchno + branchno_na +
+                                age + age_na +
+                                rural + rural_na +
+                                income + income_na + 
+                                enroll_school + enroll_school_na +
+                                study_hours+ study_hours_na + 
+                                index_empowerment + index_empowerment_na +
+                                att_earn_moneyfam + att_earn_moneyfam_na +
+                                z_Entrep_total + z_Entrep_total_na +
+                                z_Expenditure_totDF + z_Expenditure_totDF_na +
+                                value_assets + value_assets_na +
+                                loan_brac + loan_brac_na +
+                                ablework_married + ablework_married_na +
+                                M_marrywhen + M_marrywhen_na +
+                                who_decidehusband + who_decidehusband_na +
+                                work_married + work_married_na +
+                                want_respect + want_respect_na +
+                                worry_job + worry_job_na +
+                                satisf_income + satisf_income_na +
+                                selfempl + selfempl_na +
+                                hsworked_year_empl + hsworked_year_empl_na +
+                                hsworked_year_self + hsworked_year_self_na +
+                                life_skills + life_skills_na +
+                                livelihood + livelihood_na +
+                                enroll_school*study_hours + 
+                                enroll_school_na*study_hours_na +
+                                children*age +
+                                children_na*age_na,
+                              data = data_uganda_train))
 
-#X_vars <- model.matrix(lm (Y_outcome ~ children, data = data_uganda_train)) #model that works
 
 C_vars <- data_uganda_train$vill_id
 
 
 W_treatment <- as.matrix(data_uganda_train$treatment) # Treatment assignment
 
+#train causal forest
 causalforests_IGA_train <- causal_forest(X = X_vars,
                                     Y = Y_outcome,
                                     W = W_treatment, 
-                                    num.trees = 2000, #more trees result in better confident intervals
-                                    #clusters = C_vars, # paper clusters 
-                                    ## NOTE MSO: include it in the complete cases command, then it works with the clusters
+                                    num.trees = 3000, #more trees result in better confident intervals
+                                    clusters = C_vars, # paper clusters
                                     orthog.boosting = TRUE) 
                                     # but see again!!! Athey and Wager 2019; orthogonalization
-?causal_forest
+
+### Consider later if to add as instrument club_distance and run instrumental forest instead of causalforest
+
 # We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
 
 ## Predict the test data
 # Tell grf to include variance estimates, and then I assign the predictions (the estimated treatment effects) to the test data frame so that we can use these in subsequent analyses
 preds_IGA <- predict(
   object = causalforests_IGA_train, 
-  newdata = model.matrix(~ children + branchno + age + rural + income + enroll_school + study_hours+ index_empowerment + enroll_school*study_hours  + children*age, data = data_uganda_test), 
+  newdata = model.matrix(~ children + children_na +
+                             branchno + branchno_na +
+                             age + age_na +
+                             rural + rural_na +
+                             income + income_na + 
+                             enroll_school + enroll_school_na +
+                             study_hours+ study_hours_na + 
+                             index_empowerment + index_empowerment_na +
+                             enroll_school*study_hours + 
+                             enroll_school_na*study_hours_na +
+                             children*age +
+                             children_na*age_na,
+                         data= data_uganda_test), 
   estimate.variance = TRUE
 )
 
 
+#train causal forest with most baseline variables
+causal_forest_IGA <- causal_forest(X = X_baseline,
+                                    Y = Y_outcome,
+                                    W = W_treatment, 
+                                    num.trees = 3000, #more trees result in better confident intervals
+                                    clusters = C_vars, # paper clusters
+                                    orthog.boosting = TRUE) 
+
+
+#prediction to a model with most baselines
+preds_IGA_allbaseline <- predict(
+  object = causal_forest_IGA,
+  newdata = model.matrix(~ children + children_na +
+                                branchno + branchno_na +
+                                age + age_na +
+                                rural + rural_na +
+                                income + income_na + 
+                                enroll_school + enroll_school_na +
+                                study_hours+ study_hours_na + 
+                                index_empowerment + index_empowerment_na +
+                                att_earn_moneyfam + att_earn_moneyfam_na +
+                                z_Entrep_total + z_Entrep_total_na +
+                                z_Expenditure_totDF + z_Expenditure_totDF_na +
+                                value_assets + value_assets_na +
+                                loan_brac + loan_brac_na +
+                                ablework_married + ablework_married_na +
+                                M_marrywhen + M_marrywhen_na +
+                                who_decidehusband + who_decidehusband_na +
+                                work_married + work_married_na +
+                                want_respect + want_respect_na +
+                                worry_job + worry_job_na +
+                                satisf_income + satisf_income_na +
+                                selfempl + selfempl_na +
+                                hsworked_year_empl + hsworked_year_empl_na +
+                                hsworked_year_self + hsworked_year_self_na +
+                                life_skills + life_skills_na +
+                                livelihood + livelihood_na +
+                                enroll_school*study_hours + 
+                                enroll_school_na*study_hours_na +
+                                children*age +
+                                children_na*age_na,
+                         data= data_uganda_test),
+  estimate.variance = TRUE
+)
+
+#variables importance - A simple weighted sum of how many times feature i was split on at each depth in the forest. 
+variable_importance_IGA <- variable_importance(causalforests_IGA_train, decay.exponent = 4, max.depth = 400) ##not so sure what is decay.exponent and max.depth 
+variable_importance_IGA
+
 data_uganda_test$preds_IGA <- preds_IGA$predictions[, 1]
 
+# Estimate the conditional average treatment effect of the train model the full sample (CATE).
+CATE_IGA <- average_treatment_effect(causalforests_IGA_train, target.sample = "all")
 
 ```
 
-## For linear regression
-
-# Train the model using test/train split
+# Variable importance and graph CATE
 ```{r}
-# Datacamp method
-summary(ud_train)
-
-# Formula to express cty as a function of hwy: fmla and print it.
-(fmla <- cty~hwy)
-
-# Now use lm() to build a model mpg_model from mpg_train that predicts cty from hwy 
-mpg_model <- lm(fmla, mpg_train)
-
-# Use summary() to examine the model
-summary(mpg_model)
+# 
+varimp_model_wlm <- variable_importance(causalforests_IGA_train) # A matrix of importance measure, one row for each predictor variable. The column(s) are different importance measures.
+selected_imp_variables <- which ( varimp_model_wlm > mean ( varimp_model_wlm ))
+causalforests_IGA_train_vimpo <- causal_forest(X = X_vars[,selected_imp_variables],
+                                                Y = Y_outcome,
+                                                W = W_treatment,
+                                                clusters = C_vars
+                                                )
+tau.hat = predict (cf )$ predictions
 ```
+
+
+
+```{r}
+library(DiagrammeR)
+# Graph Causal Forests
+plot(tree <- get_tree(causalforests_IGA_train, 1))
+```
+
+
+
 
 # Evaluate model using test/train split
 ```{r}
-# predict cty from hwy for the training set
-mpg_train$pred <- predict(mpg_model)
+#install.packages("Metrics")
+library(Metrics)
 
-# predict cty from hwy for the test set
-mpg_test$pred <- predict(mpg_model, newdata = mpg_test)
+accuracy <- postResample(pred = preds_IGA$predictions, 
+                         obs = data_uganda_test$foll_index_income_gen_act)
+accuracy
+
+
+#absolute error rate = 9% of the predictions are completely wrong at the moment
+ae <- ae(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
+ae
+
 
 # Evaluate the rmse on both training and test data and print them
-(rmse_train <- rmse(mpg_train$pred, mpg_train$cty))
-(rmse_test <- rmse(mpg_test$pred, mpg_test$cty))
+rmse_train <- rmse(causalforests_IGA_train$predictions, data_uganda_train$foll_index_income_gen_act)
+rmse_train
+
+rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
+rmse_test
+
+#mse
+
+```
+
+BART Model for heterogeneity estimation
+```{r}
+#install.packages("bartMachine")
+library(bartMachine)
+
+Bart_model_IGA <- bartMachine(X = X_baseline,
+                              Y = Y_outcome,
+                              Xy = data_uganda_train,
+                              num_trees = 3000,
+                              k = 2,
+                              use_missing_data = TRUE)
+                      
 
 
-# Evaluate the r-squared on both training and test data.and print them
-(rsq_train <- r_squared(mpg_train$pred, mpg_train$cty))
-(rsq_test <- r_squared(mpg_test$pred, mpg_test$cty))
 
-# Plot the predictions (on the x-axis) against the outcome (cty) on the test data
-ggplot(mpg_test, aes(x = pred, y = cty)) + 
-  geom_point() + 
-  geom_abline()
+
+
 ```
 
