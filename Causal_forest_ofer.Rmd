@@ -522,9 +522,11 @@ rmse_train
 rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
 rmse_test
 
+#mse
+
 ```
 
-BART Model for hetrogeneity estimation
+BART Model for heterogeneity estimation
 ```{r}
 #install.packages("bartMachine")
 library(bartMachine)
