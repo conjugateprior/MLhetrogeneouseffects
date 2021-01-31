@@ -330,11 +330,13 @@ nrow(data_uganda_test)
 
 ## I think it is large enough the data set --> we don't need cross validation to split the data!
 
+
+
 # Other method (ratio 70:30)
 set.seed(400) # To always run same answer; or just put seed
-train <- sample(nrow(data_uganda_na_o), 0.7*nrow(data_uganda_na_o), replace = FALSE)
-data_uganda_train_v2 <- data_uganda_na_o[train,] #  Train is like the data we would collect in a randomized experiment 
-data_uganda_valid_v2 <- data_uganda_na_o[-train,] # Test would be the future cases which we are trying to predict
+train <- sample(nrow(data_uganda_na), 0.7*nrow(data_uganda_na), replace = FALSE)
+data_uganda_train_v2 <- data_uganda_na[train,] #  Train is like the data we would collect in a randomized experiment 
+data_uganda_valid_v2 <- data_uganda_na[-train,] # Test would be the future cases which we are trying to predict
 summary(data_uganda_train_v2)
 nrow(data_uganda_train_v2)
 summary(data_uganda_valid_v2)
@@ -342,13 +344,10 @@ nrow(data_uganda_valid_v2)
 
 ```
 
-```{r}
-
-```
 
 ### NOTES: USE CAUSAL TREE FROM GRF PACKAGE (TUNE PARAMETERS ALL)
 
-# Train a Causal Forests
+Generate X and Y matrixes
 ```{r}
 library(grf)
 
@@ -410,18 +409,73 @@ C_vars <- data_uganda_train$vill_id
 
 
 W_treatment <- as.matrix(data_uganda_train$treatment) # Treatment assignment
+```
 
+Estimating treatment effects with causal forests. Throughout this note, we follow
+editorial guidelines for the special issue of Observational Studies, and denote treatment assignment
+by Z. However, the grf interface has different conventions, and treatment assignment is denoted by
+W rather than Z (e.g., the function causal_forest actually has an argument W.hat, not Z.hat).
+In order to get these code snippets to run in grf, all the \Z" need to be replaced with \W".
+
+We train the Y.forest and Z.forest using default settings, as their predictions
+are simply used as inputs to the causal forest and default parameter choices often perform
+reasonably well with random forests.
+
+```{r}
+
+Y.forest = regression_forest(X_baseline, Y_outcome, clusters = C_vars)
+Y.hat = predict(Y.forest)$predictions
+
+W.forest = regression_forest(X_baseline, W_treatment, clusters = C_vars)
+W.hat = predict(W.forest)$predictions
+
+
+cf.raw = causal_forest (X_baseline, 
+                        Y_outcome, 
+                        W_treatment,
+                        Y.hat = Y.hat, 
+                        W.hat = W.hat,
+                        clusters = C_vars)
+
+varimp = variable_importance(cf.raw)
+selected.idx = which(varimp > mean(varimp)) #select only important variables and train another causal forest using only important variables
+cf = causal_forest (X_baseline[,selected.idx], 
+                      Y_outcome, W_treatment, 
+                      Y.hat = Y.hat, 
+                      W.hat = W.hat, 
+                      num.trees = 3000,
+                      clusters = C_vars,
+                      tune.parameters = "all")
+tau.hat = predict(cf)$predictions
+
+ATE = average_treatment_effect(cf)
+
+
+# Compare regions with high and low estimated CATEs
+high_effect = tau.hat > median(tau.hat)
+ate.high = average_treatment_effect(cf, subset = high_effect)
+ate.low = average_treatment_effect(cf, subset = !high_effect)
+#result is the 95% confidence interval in ATE: ___ +/- ___
+
+# Run best linear predictor analysis
+test_calibration(cf)
+```
+
+
+Causal forest
+```{r}
 #train causal forest
 causalforests_IGA_train <- causal_forest(X = X_vars,
                                     Y = Y_outcome,
                                     W = W_treatment, 
                                     num.trees = 3000, #more trees result in better confident intervals
-                                    clusters = C_vars, # paper clusters
-                                    orthog.boosting = TRUE) 
+                                    clusters = C_vars,
+                                    orthog.boosting = TRUE,
+                                    tune.parameters = TRUE)# paper clusters
+                               
                                     # but see again!!! Athey and Wager 2019; orthogonalization
 
 ### Consider later if to add as instrument club_distance and run instrumental forest instead of causalforest
-
 # We don't mention here Y.hat and W.hat --> Null; software silently estimates Y.hat or W.hat via regression forests.
 
 ## Predict the test data
@@ -444,7 +498,7 @@ preds_IGA <- predict(
   estimate.variance = TRUE
 )
 
-
+####################################################
 #train causal forest with most baseline variables
 causal_forest_IGA <- causal_forest(X = X_baseline,
                                     Y = Y_outcome,
