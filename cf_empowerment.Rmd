@@ -1,0 +1,236 @@
+---
+title: "Causal forest with outcome wmpowerment"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+#load data uganda
+load("data_uganda.rda")
+```
+
+
+```{r packages, fig.show='hide', message=FALSE, warning=FALSE, include=FALSE, results='hide'}
+
+#Load libraries
+library(haven)
+library(caret)
+library(tidyverse) 
+library(expss)
+library(summarytools)
+library(mice)
+
+```
+
+Split data to train and test
+
+```{r}
+N <- nrow(data_uganda)
+# Calculate how many rows 75% of N should be and print it; we use round to get an integer
+target <- round(N * 0.75)
+# Create the vector of N uniform random variables: rv
+rv <- runif(N)
+# Use rv to create the training set: ud_train (75% of data) and ud_test (25% of data)
+uganda_train <- data_uganda[rv < 0.75, ]
+uganda_test <- data_uganda[rv >= 0.75, ]
+# Use nrow() to examine ud_train and ud_test
+nrow(uganda_train)
+nrow(uganda_test)
+```
+
+Generate matrixes
+
+```{r}
+library(grf)
+
+# Random seed to reproduce results
+set.seed
+
+# Create outcome and inputs for the Causal Forests (important all numeric; including dummy code the factor variables)
+Y_empowerment <- as.matrix(uganda_train$foll_index_empowerment)
+
+X_baseline <- model.matrix(lm(Y_empowerment ~ children + children_na +
+                                branchno + branchno_na +
+                                age + age_na +
+                                rural + rural_na +
+                                income + income_na + 
+                                enroll_school + enroll_school_na +
+                                study_hours+ study_hours_na + 
+                                index_empowerment + index_empowerment_na +
+                                att_earn_moneyfam + att_earn_moneyfam_na +
+                                z_Entrep_total + z_Entrep_total_na +
+                                z_Expenditure_totDF + z_Expenditure_totDF_na +
+                                value_assets + value_assets_na +
+                                loan_brac + loan_brac_na +
+                                ablework_married + ablework_married_na +
+                                M_marrywhen + M_marrywhen_na +
+                                who_decidehusband + who_decidehusband_na +
+                                work_married + work_married_na +
+                                want_respect + want_respect_na +
+                                worry_job + worry_job_na +
+                                satisf_income + satisf_income_na +
+                                selfempl + selfempl_na +
+                                hsworked_year_empl + hsworked_year_empl_na +
+                                hsworked_year_self + hsworked_year_self_na +
+                                life_skills + life_skills_na +
+                                livelihood + livelihood_na +
+                                enroll_school*study_hours + 
+                                enroll_school_na*study_hours_na +
+                                children*age +
+                                children_na*age_na,
+                              data = uganda_train))
+
+#cluster
+C_vars <- uganda_train$vill_id
+
+# Treatment assignment
+W_treatment <- as.matrix(uganda_train$treatment) 
+```
+
+```{r}
+
+Y.forest = regression_forest(X_baseline, Y_empowerment, clusters = C_vars)
+Y.hat = predict(Y.forest)$predictions
+
+W.forest = regression_forest(X_baseline, 
+                             W_treatment, 
+                             clusters = C_vars)
+W.hat = predict(W.forest)$predictions
+
+
+cf.raw = causal_forest (X_baseline, 
+                        Y_empowerment, 
+                        W_treatment,
+                        Y.hat = Y.hat, 
+                        W.hat = W.hat,
+                        clusters = C_vars)
+
+#test set
+preds_cf.raw <- predict(
+  object = cf.raw,
+  newdata = model.matrix(~children + children_na +
+                                branchno + branchno_na +
+                                age + age_na +
+                                rural + rural_na +
+                                income + income_na + 
+                                enroll_school + enroll_school_na +
+                                study_hours+ study_hours_na + 
+                                index_empowerment + index_empowerment_na +
+                                att_earn_moneyfam + att_earn_moneyfam_na +
+                                z_Entrep_total + z_Entrep_total_na +
+                                z_Expenditure_totDF + z_Expenditure_totDF_na +
+                                value_assets + value_assets_na +
+                                loan_brac + loan_brac_na +
+                                ablework_married + ablework_married_na +
+                                M_marrywhen + M_marrywhen_na +
+                                who_decidehusband + who_decidehusband_na +
+                                work_married + work_married_na +
+                                want_respect + want_respect_na +
+                                worry_job + worry_job_na +
+                                satisf_income + satisf_income_na +
+                                selfempl + selfempl_na +
+                                hsworked_year_empl + hsworked_year_empl_na +
+                                hsworked_year_self + hsworked_year_self_na +
+                                life_skills + life_skills_na +
+                                livelihood + livelihood_na +
+                                enroll_school*study_hours + 
+                                enroll_school_na*study_hours_na +
+                                children*age +
+                                children_na*age_na,
+                         data= uganda_test),
+  estimate.variance = TRUE
+)
+
+
+#average treatment effect for the raw model
+ATE = average_treatment_effect(cf.raw)
+paste("95% CI for the ATE:", round(ATE[1], 3),
+      "+/-", round(qnorm(0.975) * ATE[2], 3))
+
+#accuracy check for raw model
+accuracy <- postResample(pred = preds_cf.raw$predictions, 
+                         obs = uganda_test$foll_index_empowerment)
+accuracy
+
+
+
+#after training a raw model with all baseline variables, it is recommended to train additional model only with important variable
+##check for variable importance
+varimp = variable_importance(cf.raw)
+selected.idx = which(varimp > mean(varimp)) #select only important variables and train another causal forest using only important variables
+
+#train a causal forest only with selected variables
+cf = causal_forest(X_baseline[,selected.idx], 
+                      Y_empowerment, W_treatment, 
+                      Y.hat = Y.hat, 
+                      W.hat = W.hat, 
+                      num.trees = 3000,
+                      clusters = C_vars,
+                      tune.parameters = "all")
+tau.hat = predict(cf)$predictions 
+
+#average treatment effect for the model with important variables
+ATE = average_treatment_effect(cf)
+paste("95% CI for the ATE:", round(ATE[1], 3),
+      "+/-", round(qnorm(0.975) * ATE[2], 3))
+
+
+#
+# Omnibus tests for heterogeneity
+#
+
+# Run best linear predictor analysis
+test_calibration(cf)
+
+# Compare villages with high and low estimated CATEs
+high_effect = tau.hat > median(tau.hat)
+ate.high = average_treatment_effect(cf, subset = high_effect)
+ate.low = average_treatment_effect(cf, subset = !high_effect)
+paste("95% CI for difference in ATE:",
+      round(ate.high[1] - ate.low[1], 3), "+/-",
+      round(qnorm(0.975) * sqrt(ate.high[2]^2 + ate.low[2]^2), 3))
+
+```
+
+
+```{r}
+library(DiagrammeR)
+# Graph Causal Forests
+plot(tree <- get_tree(cf, 1))
+```
+
+
+```{r}
+library(Metrics)
+
+accuracy <- postResample(pred = preds_IGA$predictions, 
+                         obs = data_uganda_test$foll_index_income_gen_act)
+accuracy
+
+
+#absolute error rate = 9% of the predictions are completely wrong at the moment
+ae <- ae(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
+ae
+
+
+# Evaluate the rmse on both training and test data and print them
+rmse_train <- rmse(causalforests_IGA_train$predictions, data_uganda_train$foll_index_income_gen_act)
+rmse_train
+
+rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
+rmse_test
+
+```
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
