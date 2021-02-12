@@ -91,13 +91,14 @@ W_treatment <- as.matrix(uganda_train$treatment)
 ```
 
 ```{r}
-
-Y.forest = regression_forest(X_baseline, Y_empowerment, clusters = C_vars)
+Y.forest = regression_forest(X_baseline, Y_empowerment, clusters = C_vars,
+                             equalize.cluster.weights = TRUE)
 Y.hat = predict(Y.forest)$predictions
 
 W.forest = regression_forest(X_baseline, 
                              W_treatment, 
-                             clusters = C_vars)
+                             clusters = C_vars, 
+                             equalize.cluster.weights = TRUE)
 W.hat = predict(W.forest)$predictions
 
 
@@ -106,7 +107,12 @@ cf.raw = causal_forest (X_baseline,
                         W_treatment,
                         Y.hat = Y.hat, 
                         W.hat = W.hat,
-                        clusters = C_vars)
+                        honesty = TRUE,
+                        #clusters = C_vars,
+                        tune.parameters = "all",
+                        equalize.cluster.weights = TRUE,
+                        num.trees = 6000)
+
 
 #test set
 preds_cf.raw <- predict(
@@ -144,19 +150,26 @@ preds_cf.raw <- predict(
   estimate.variance = TRUE
 )
 
-
-#average treatment effect for the raw model
-ATE = average_treatment_effect(cf.raw)
-paste("95% CI for the ATE:", round(ATE[1], 3),
-      "+/-", round(qnorm(0.975) * ATE[2], 3))
-
-#accuracy check for raw model
-accuracy <- postResample(pred = preds_cf.raw$predictions, 
-                         obs = uganda_test$foll_index_empowerment)
-accuracy
+#compute the standard errors for all predictions.
+standard.error = sqrt(preds_cf.raw$variance.estimates)
+standard.error
+```
 
 
+```{r}
+```
 
+In order for conditional average treatment effects to be properly identified, a dataset’s propensity scores must be bounded away from 0 and 1. A simple way to validate this assumption is to calculate the propensity scores by regressing the treatment assignments W against X, and examining the out-of-bag predictions. Concretely, you can perform the following steps:
+If there is strong overlap, the histogram will be concentrated away from 0 and 1. If the data is instead concentrated at the extremes, the overlap assumption likely does not hold.
+
+```{r}
+propensity.forest = regression_forest(X_baseline, W_treatment)
+W.hat.p = predict(propensity.forest)$predictions
+hist(W.hat.p, xlab = "propensity score")
+```
+
+
+```{r}
 #after training a raw model with all baseline variables, it is recommended to train additional model only with important variable
 ##check for variable importance
 varimp = variable_importance(cf.raw)
@@ -167,15 +180,33 @@ cf = causal_forest(X_baseline[,selected.idx],
                       Y_empowerment, W_treatment, 
                       Y.hat = Y.hat, 
                       W.hat = W.hat, 
-                      num.trees = 3000,
-                      clusters = C_vars,
-                      tune.parameters = "all")
-tau.hat = predict(cf)$predictions 
+                      num.trees = 6000,
+                      #clusters = C_vars,
+                      honesty = TRUE,
+                      tune.parameters = "all",
+                      equalize.cluster.weights = TRUE)
+
+tau.hat = predict(cf)$predictions
+```
+
+
+```{r}
+
+#average treatment effect for the raw model
+ATE.raw = average_treatment_effect(cf.raw)
+paste("95% CI for the ATE:", round(ATE.raw[1], 3),
+      "+/-", round(qnorm(0.975) * ATE.raw[2], 3))
+
 
 #average treatment effect for the model with important variables
 ATE = average_treatment_effect(cf)
 paste("95% CI for the ATE:", round(ATE[1], 3),
       "+/-", round(qnorm(0.975) * ATE[2], 3))
+
+
+#histogram of predicted conditional average treatment effects
+pardef = par(mar = c(5, 4, 4, 2) + 0.5, cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+hist(tau.hat, xlab = "estimated CATE", main = "")
 
 
 #
@@ -204,24 +235,7 @@ plot(tree <- get_tree(cf, 1))
 
 
 ```{r}
-library(Metrics)
 
-accuracy <- postResample(pred = preds_IGA$predictions, 
-                         obs = data_uganda_test$foll_index_income_gen_act)
-accuracy
-
-
-#absolute error rate = 9% of the predictions are completely wrong at the moment
-ae <- ae(data_uganda_test$foll_index_income_gen_act, preds_IGA$predictions)
-ae
-
-
-# Evaluate the rmse on both training and test data and print them
-rmse_train <- rmse(causalforests_IGA_train$predictions, data_uganda_train$foll_index_income_gen_act)
-rmse_train
-
-rmse_test <- rmse(preds_IGA$predictions, data_uganda_test$foll_index_income_gen_act)
-rmse_test
 
 ```
 
