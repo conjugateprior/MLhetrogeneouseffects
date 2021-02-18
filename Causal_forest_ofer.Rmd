@@ -66,7 +66,7 @@ nrow(data_uganda_valid_v2)
 Generate X and Y matrixes
 ```{r, include=FALSE}
 # Random seed to reproduce results
-set.seed
+set.seed(123)
 
 ## INCOME GENERATING ACTIVITY - IGA
 # Create outcome and inputs for the Causal Forests (important all numeric; including dummy code the factor variables)
@@ -250,7 +250,7 @@ hist(standard.error)
 alternative method to estimate standard errors test data
 ```{r}
 model_sigma <- sqrt(predict(cf, X.test[, selected.idx], estimate.variance = TRUE)$variance.estimates)
-model_sigma
+#model_sigma
 ```
 
 estimating CATE
@@ -263,8 +263,6 @@ new_data_cates$pred_est_ub <- new_data_cates$pred_est + 1.96 * new_data_cates$pr
 
 # For each factor, get the average at each level
 # Get results for every level of every variable by aggregating up
-library(ggplot2)
-
 cates <- lapply(names(new_data_cates[, 1:4]), function(x) {
   tmp <- new_data_cates %>% 
     group_by_(x) %>% 
@@ -290,9 +288,10 @@ cates.new.df <- as.data.frame(cates.new)
 
 
 # visualize these
-library(ggplot2)
-
-ggplot(cates, aes(x = level, y = ate)) + geom_point(color = variable) +
+ggplot(cates, aes(x = level, y = ate, colour = variable)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin = ate_lb, ymax = ate_ub), width = .2) +
+  geom_hline(yintercept = 0, linetype = 3) +
   theme_light() +
   theme(
     panel.grid.major.x = element_blank(),
@@ -301,9 +300,6 @@ ggplot(cates, aes(x = level, y = ate)) + geom_point(color = variable) +
     strip.background = element_rect(colour = NA, fill = NA),
     legend.position = "none"
     ) + 
-  geom_point() +
-  geom_errorbar(aes(ymin = ate_lb, ymax = ate_ub), width = .2) +
-  geom_hline(yintercept = 0, linetype = 3) +
   facet_grid(variable ~ ., scales = "free_y") +
   coord_flip()
 
