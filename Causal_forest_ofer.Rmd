@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Generalized Randon Forest (cf. Athey and Wager)
 #install.packages("grf") 
 ```
-Load libraries
+#Load libraries
 ```{r packages, fig.show='hide', message=FALSE, warning=FALSE, include=FALSE, results='hide'}
 #Load libraries
 library(grf)
@@ -22,14 +22,13 @@ library(tidyverse) # remember includes dplyr
 library(expss)
 ```
 
-Load data
+#Load data
 ```{r}
 # Load data
 load("data_uganda.rda")
 ```
 
-# Split the dataset into train and test set. Why? to not have overfiting problems. 
-
+#Split the dataset into train and test set. Why? to not have overfiting problems. 
 ```{r}
 ## Datacamp method (ratio 75:25); most of causal forest use this ratio but haven't found true argument to chose this ratio. 
 # Get number of rows
@@ -47,7 +46,7 @@ nrow(data_uganda_test)
 
 ```
 
-Generate X, Y, W (treatment), C(clusters) matrixes
+#Generate X, Y, W (treatment), C(clusters) matrixes
 ```{r, include=FALSE}
 # Random seed to reproduce results
 set.seed(1236)
@@ -82,7 +81,7 @@ C_vars <- data_uganda_train$vill_id
 W_treatment <- as.matrix(data_uganda_train$treatment) 
 ```
 
-Estimate treatment effects with causal forests. 
+#Estimate treatment effects with causal forests. 
 train the Y.forest and Z.forest with default settings (later inputs to the causal forest)
 ```{r  message=FALSE, warning=FALSE, include=FALSE}
 Y.forest = regression_forest(X_vars, 
@@ -100,7 +99,7 @@ W.forest = regression_forest(X_vars,
 W.hat = predict(W.forest)$predictions
 ```
 
-Train raw causal forest (no important variable selection)
+#Train raw causal forest (no important variable selection)
 ```{r  message=FALSE, warning=FALSE, include=FALSE}
 cf.raw = causal_forest (X_vars, 
                         Y_outcome, 
@@ -131,7 +130,7 @@ X.test <- model.matrix( ~ children + children_na +
 pred.cf.raw <- predict(cf.raw, X.test, num.trees = 6000, data=data_uganda_test, estimate.variance = TRUE)
 ```
 
-Validating the overlap assumption.
+#Validating the overlap assumption.
 Estimate the data's propensity scores to ensure scores are bounded away from 0 and 1
 In order for conditional average treatment effects to be properly identified
 ```{r}
@@ -140,13 +139,13 @@ W.hat.p = predict(propensity.forest)$predictions
 hist(W.hat.p, xlab = "propensity score")
 ```
 
-Estimate the average treatment effect for the full sample
+#Estimate the average treatment effect for the full sample
 ```{r}
 # Estimate the conditional average treatment effect on the full sample (CATE).
 average_treatment_effect(cf.raw, target.sample = "all")
 ```
 
-Estimate the average treatment effect for the raw cf
+#Estimate the average treatment effect for the raw cf
 ```{r}
 #average treatment effect for the raw model
 ATE = average_treatment_effect(cf.raw)
@@ -155,14 +154,14 @@ paste("95% CI for the ATE:", round(ATE[1], 3),
 
 ```
 
-Find important variables
+#Find important variables
 ```{r}
 ##check for variable importance
 varimp = variable_importance(cf.raw)
 selected.idx = which(varimp > mean(varimp>0.2)) #select only important variables and train another causal forest using only important variables
 ```
 
-Train a second causal forest using only important variables index
+#Train a second causal forest using only important variables index
 ```{r}
 #train a causal forest only with selected important variables.
 cf = causal_forest(X_vars[,selected.idx], 
@@ -174,7 +173,7 @@ cf = causal_forest(X_vars[,selected.idx],
                       tune.parameters = "all")
 ```
 
-Predict the tau hat of the cf and plot a histogram
+#Predict the tau hat of the cf and plot a histogram
 ```{r}
 #predict the causal forest (train set)
 tau.hat = predict(cf)$predictions
@@ -183,7 +182,7 @@ tau.hat = predict(cf)$predictions
 hist(tau.hat$predictions)
 ```
 
-Predict the test set and plot histogram of frequency of predictions
+#Predict the test set and plot histogram of frequency of predictions
 ```{r}
 #predict test set
 pred.cf <- predict(cf, X.test[,selected.idx], 
@@ -196,7 +195,7 @@ pred.cf <- predict(cf, X.test[,selected.idx],
 hist((pred.cf)$predictions)  
 ```
 
-Estimate ATE for cf model with important variables
+#Estimate ATE for cf model with important variables
 ```{r}
 #average treatment effect for the model with important variables
 ATE.cf = average_treatment_effect(cf)
@@ -204,14 +203,14 @@ paste("95% CI for the ATE:", round(ATE.cf[1], 3),
       "+/-", round(qnorm(0.975) * ATE.cf[2], 3))
 ```
 
-Estimate accuracy for model with selected important variables
+#Estimate accuracy for model with selected important variables
 ```{r}
 accuracy <- postResample(pred = pred.cf$predictions, 
                          obs = data_uganda_test$foll_index_income_gen_act)
 accuracy
 ```
 
-Check overlap assumption for selected index
+#Check overlap assumption for selected index
 #assumption holds when choosing only selected index
 ```{r}
 propensity.forest.selected.inx = regression_forest(X_vars[,selected.idx], W_treatment)
@@ -219,7 +218,7 @@ W.hat.p = predict(propensity.forest.selected.inx)$predictions
 hist(W.hat.p, xlab = "propensity score")
 ```
 
-Estimate standard errors for test data and plot them
+#Estimate standard errors for test data and plot them
 ```{r}
 #standard error predictions
 standard.error = sqrt(pred.cf$variance.estimates)
@@ -227,13 +226,13 @@ standard.error = sqrt(pred.cf$variance.estimates)
 hist(standard.error)
 ```
 
-Alternative method to estimate standard errors test data
+#Alternative method to estimate standard errors test data
 ```{r}
 model_sigma <- sqrt(predict(cf, X.test[, selected.idx], estimate.variance = TRUE)$variance.estimates)
 #model_sigma
 ```
 
-Estimate CATE and plot estimations
+#Estimate CATE and plot estimations
 ```{r}
 new_data_cates <- as.data.frame(X.test[,-1])
 new_data_cates$pred_est <- c(pred.cf$predictions)
@@ -287,7 +286,7 @@ plot.cates
 
 ```
 
-Estimate the overlap assumption to check ifcovariates are balanced across the treated and control group by plotting the inverse-propensity weighted histograms
+#Estimate the overlap assumption to check ifcovariates are balanced across the treated and control group by plotting the inverse-propensity weighted histograms
 ```{r}
 w.cf <- cf$W.hat
   
@@ -306,12 +305,12 @@ ggplot(plot.df, aes(x = X_vars, weight = IPW, fill = W_treatment))
 dim(X_vars)
 ```
 
-Best linear predictor analysis to understand if the model detects heterogeneity 
+#Best linear predictor analysis to understand if the model detects heterogeneity 
 ```{r}
 test_calibration(cf)
 ```
 
-Compare villages with high or low ATE estimations
+#Compare villages with high or low ATE estimations
 ```{r}
 high_effect = tau.hat > median(tau.hat)
 ate.high = average_treatment_effect(cf, subset = high_effect)
@@ -321,7 +320,7 @@ paste("95% CI for difference in ATE:",
       round(qnorm(0.975) * sqrt(ate.high[2]^2 + ate.low[2]^2), 3))
 ```
 
-Estimate model bias
+#Estimate model bias
 ```{r}
 p <- mean(W_treatment)
 Y.hat.0 <- cf$Y.hat - w.cf * tau.hat
@@ -332,7 +331,7 @@ bias <- (w.cf - p) * (p * (Y.hat.0 - mean(Y.hat.0))  + (1 - p) * (Y.hat.1 - mean
 hist(bias / sd(Y_outcome))
 ```
 
-Plot a tree
+#Plot a tree
 ```{r}
 library(DiagrammeR)
 # Graph Causal Forests
@@ -341,7 +340,7 @@ tree$nodes
 ```
 
 
-Evaluate model using test/train split
+#Evaluate model using test/train split
 ```{r}
 #install.packages("Metrics")
 library(Metrics)
@@ -362,7 +361,7 @@ rmse_test
 ```
 
 
-Run specific analysis to check heterogeneity in important variables
+#Run specific analysis to check heterogeneity in important variables
 ```{r}
 #test heterogeneous in rural and urban
 
