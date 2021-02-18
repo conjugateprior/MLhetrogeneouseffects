@@ -16,11 +16,12 @@ load("data_uganda.rda")
 ```{r packages, fig.show='hide', message=FALSE, warning=FALSE, include=FALSE, results='hide'}
 
 #Load libraries
+library(grf)
 library(haven)
 library(caret)
 library(tidyverse) 
 library(expss)
-library(summarytools)
+#library(summarytools)
 library(mice)
 
 ```
@@ -44,7 +45,6 @@ nrow(uganda_test)
 Generate matrixes
 
 ```{r}
-library(grf)
 
 # Random seed to reproduce results
 set.seed
